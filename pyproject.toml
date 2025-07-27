@@ -1,0 +1,90 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "confetti-todo"
+version = "1.0.0"
+description = "A dopamine-driven, ADHD-friendly todo list that celebrates your wins"
+readme = "README.md"
+license = {text = "MIT"}
+authors = [
+    {name = "Confetti Todo Contributors"},
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Office/Business :: Scheduling",
+    "Topic :: Utilities",
+]
+requires-python = ">=3.9"
+dependencies = [
+    "fastapi==0.104.1",
+    "uvicorn[standard]==0.24.0.post1",
+    "pydantic==2.5.0",
+    "websockets==12.0",
+    "python-multipart==0.0.6",
+    "aiofiles==23.2.1",
+    "typing-extensions==4.8.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest==7.4.3",
+    "pytest-asyncio==0.21.1",
+    "pytest-cov==4.1.0",
+    "httpx==0.25.2",
+    "playwright==1.40.0",
+    "black==23.11.0",
+    "flake8==6.1.0",
+    "mypy==1.7.1",
+    "mkdocs==1.5.3",
+    "mkdocs-material==9.4.14",
+]
+
+[project.scripts]
+confetti-todo = "server:main"
+
+[project.urls]
+Homepage = "https://github.com/yourusername/confetti-todo"
+Documentation = "https://github.com/yourusername/confetti-todo#readme"
+Issues = "https://github.com/yourusername/confetti-todo/issues"
+
+[tool.black]
+line-length = 88
+target-version = ['py39']
+include = '\.pyi?$'
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+asyncio_mode = "auto"
+
+[tool.mypy]
+python_version = "3.9"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+ignore_missing_imports = true
+
+[tool.coverage.run]
+source = ["server"]
+omit = ["*/tests/*", "*/venv/*"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "if __name__ == .__main__.:",
+    "raise AssertionError",
+    "raise NotImplementedError",
+]
