@@ -8,6 +8,7 @@ from pathlib import Path
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 import uvicorn
 
@@ -20,6 +21,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Mount static files
+app.mount("/assets", StaticFiles(directory="assets"), name="assets")
 
 TODO_FILE = Path("todos.md")
 BACKUP_DIR = Path("backups")
@@ -289,6 +293,20 @@ async def get_stats():
     stats["xp_for_next_level"] = 500
     
     return stats
+
+class BonusXP(BaseModel):
+    xp: int
+    reason: str
+
+@app.post("/api/stats/bonus")
+async def add_bonus_xp(data: BonusXP):
+    # For now, just return a mock response since we don't persist stats
+    # In a real app, you'd update persistent stats storage
+    return {
+        "status": "ok",
+        "xp_added": data.xp,
+        "reason": data.reason
+    }
 
 @app.get("/api/quick-win")
 async def get_quick_win():

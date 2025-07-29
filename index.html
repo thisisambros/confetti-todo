@@ -3,873 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <title>Confetti Todo</title>
-    <style>
-        :root {
-            --color-primary: #0043ff;
-            --color-success: #89efbd;
-            --color-error: #ffd6d8;
-            --color-warning: #ffd093;
-            --color-bg: #ffffff;
-            --color-text: #000000;
-            --color-muted: #666666;
-            --color-border: #000000;
-            --color-light-gray: #f5f5f5;
-            --font-mono: 'Consolas', 'Monaco', 'Courier New', monospace;
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        body {
-            font-family: var(--font-mono);
-            background: var(--color-bg);
-            color: var(--color-text);
-            padding: 2rem 1rem;
-            line-height: 1.6;
-            margin: 0;
-        }
-
-        .app-layout {
-            display: flex;
-            max-width: 1200px;
-            margin: 0 auto;
-            gap: 2rem;
-            align-items: flex-start;
-        }
-
-        .main-content {
-            flex: 1;
-            max-width: 800px;
-        }
-
-        .right-widget {
-            position: sticky;
-            top: 2rem;
-            width: 280px;
-            height: fit-content;
-            background: var(--color-light-gray);
-            border: 1px solid var(--color-border);
-            padding: 1.5rem;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-
-        @media (max-width: 1024px) {
-            .app-layout {
-                flex-direction: column;
-            }
-            .right-widget {
-                position: static;
-                width: 100%;
-                margin-bottom: 2rem;
-            }
-        }
-
-        h1 {
-            font-size: 2.5rem;
-            text-align: center;
-            margin-bottom: 2rem;
-            max-width: 1200px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-
-        /* Right Widget Content */
-        .widget-section {
-            margin-bottom: 1.5rem;
-        }
-
-        .widget-section:last-child {
-            margin-bottom: 0;
-        }
-
-        .widget-title {
-            font-size: 0.9rem;
-            font-weight: bold;
-            margin-bottom: 0.5rem;
-            text-transform: uppercase;
-            opacity: 0.7;
-        }
-
-        .level-info {
-            font-size: 1.2rem;
-            font-weight: bold;
-        }
-
-        .xp-progress-container {
-            width: 100%;
-        }
-
-        .xp-bar {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .xp-progress {
-            flex: 1;
-            height: 20px;
-            background: #fff;
-            border: 1px solid var(--color-border);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .xp-fill {
-            height: 100%;
-            background: var(--color-primary);
-            transition: width 0.6s ease;
-        }
-
-        .today-stats {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1rem;
-            font-size: 0.9rem;
-        }
-
-        .stat-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 1rem;
-            background: white;
-            border: 1px solid var(--color-border);
-        }
-
-        .stat-value {
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: var(--color-primary);
-        }
-
-        /* Input Field */
-        .input-container {
-            margin-bottom: 2rem;
-        }
-
-        #task-input {
-            width: 100%;
-            padding: 1rem;
-            font-family: var(--font-mono);
-            font-size: 1rem;
-            border: 1px solid var(--color-border);
-            background: var(--color-bg);
-            outline: none;
-        }
-
-        #task-input:focus {
-            background: #f0f0f0;
-        }
-
-        #task-input.error {
-            animation: shake 0.3s;
-            border-color: var(--color-error);
-        }
-
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-5px); }
-            75% { transform: translateX(5px); }
-        }
-
-        /* Working Zone */
-        .working-zone {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: 2px solid var(--color-border);
-            padding: 2rem;
-            margin-bottom: 2rem;
-            border-radius: 8px;
-            position: relative;
-            overflow: hidden;
-            min-height: 180px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            animation: workingGlow 2s ease-in-out infinite;
-        }
-
-        @keyframes workingGlow {
-            0%, 100% { box-shadow: 0 0 20px rgba(102, 126, 234, 0.4); }
-            50% { box-shadow: 0 0 40px rgba(102, 126, 234, 0.8); }
-        }
-
-        .working-zone.empty {
-            background: var(--color-light-gray);
-            color: var(--color-muted);
-            animation: none;
-            cursor: pointer;
-            transition: all 0.3s;
-            border: 2px dashed var(--color-border);
-        }
-
-        .working-zone.empty:hover {
-            background: #e0e0e0;
-            border-color: var(--color-primary);
-        }
-        
-        .working-empty {
-            opacity: 0.7;
-        }
-
-        .working-task {
-            width: 100%;
-        }
-
-        .working-title {
-            font-size: 1.5rem;
-            font-weight: bold;
-            margin-bottom: 1rem;
-        }
-
-        .working-meta {
-            display: flex;
-            gap: 1rem;
-            justify-content: center;
-            margin-bottom: 1rem;
-            opacity: 0.9;
-        }
-
-        .working-timer {
-            font-size: 1.1rem;
-            margin-bottom: 1rem;
-        }
-
-        .working-progress {
-            width: 100%;
-            height: 8px;
-            background: rgba(255,255,255,0.3);
-            border-radius: 4px;
-            overflow: hidden;
-            margin-bottom: 1.5rem;
-        }
-
-        .working-progress-fill {
-            height: 100%;
-            background: white;
-            width: 0%;
-            animation: progressPulse 60s linear infinite;
-        }
-
-        @keyframes progressPulse {
-            0% { width: 0%; }
-            100% { width: 100%; }
-        }
-
-        .stop-working-btn {
-            padding: 0.5rem 2rem;
-            background: rgba(255,255,255,0.2);
-            color: white;
-            border: 1px solid white;
-            cursor: pointer;
-            font-family: var(--font-mono);
-            transition: all 0.3s;
-        }
-
-        .stop-working-btn:hover {
-            background: rgba(255,255,255,0.3);
-        }
-
-        /* Quick Win */
-        .quick-win {
-            background: var(--color-success);
-            border: 1px solid var(--color-border);
-            padding: 1rem;
-            margin-bottom: 2rem;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .quick-win:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-
-        .quick-win-label {
-            font-weight: bold;
-        }
-
-        .quick-win-xp {
-            font-size: 1.2rem;
-            font-weight: bold;
-        }
-
-        /* Filters and Sorting */
-        .controls {
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 1rem;
-            flex-wrap: wrap;
-        }
-
-        .filter-buttons {
-            display: flex;
-            gap: 0.5rem;
-        }
-
-        .filter-btn {
-            padding: 0.5rem 1rem;
-            border: 1px solid var(--color-border);
-            background: var(--color-bg);
-            cursor: pointer;
-            font-family: var(--font-mono);
-            transition: all 0.2s;
-        }
-
-        .filter-btn.active {
-            background: var(--color-primary);
-            color: white;
-        }
-
-        .filter-btn:hover:not(.active) {
-            background: var(--color-light-gray);
-        }
-
-        .sort-select {
-            padding: 0.5rem;
-            border: 1px solid var(--color-border);
-            background: var(--color-bg);
-            font-family: var(--font-mono);
-            cursor: pointer;
-        }
-
-        /* Task List */
-        .task-section {
-            margin-bottom: 2rem;
-        }
-
-        .section-header {
-            font-size: 1.2rem;
-            font-weight: bold;
-            margin-bottom: 1rem;
-            padding-bottom: 0.5rem;
-            border-bottom: 2px solid var(--color-border);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .task-count-info {
-            font-size: 0.9rem;
-            color: var(--color-muted);
-            font-weight: normal;
-        }
-
-        .show-more-btn {
-            padding: 0.5rem 1rem;
-            border: 1px solid var(--color-border);
-            background: var(--color-bg);
-            cursor: pointer;
-            font-family: var(--font-mono);
-            font-size: 0.9rem;
-            margin: 1rem 0;
-            width: 100%;
-            text-align: center;
-            transition: all 0.2s;
-        }
-
-        .show-more-btn:hover {
-            background: var(--color-light-gray);
-        }
-
-        .task-list {
-            list-style: none;
-        }
-
-        .task-item {
-            display: flex;
-            align-items: center;
-            padding: 0.75rem;
-            margin-bottom: 0.5rem;
-            border: 1px solid #ddd;
-            background: var(--color-bg);
-            transition: all 0.2s;
-            position: relative;
-            cursor: move;
-        }
-
-        .task-item.dragging {
-            opacity: 0.5;
-            cursor: grabbing;
-        }
-
-        .task-item.drag-over {
-            border-top: 3px solid var(--color-primary);
-        }
-
-        .task-item:hover {
-            border-color: var(--color-border);
-            background: var(--color-light-gray);
-        }
-
-        .task-item.subtask {
-            margin-left: 2rem;
-            border-left: 3px solid var(--color-primary);
-            display: none;
-        }
-
-        .task-item.subtasks-expanded .task-item.subtask {
-            display: flex;
-        }
-
-        .subtask-toggle {
-            display: inline-block;
-            width: 16px;
-            height: 16px;
-            margin-right: 0.5rem;
-            cursor: pointer;
-            text-align: center;
-            line-height: 16px;
-            font-size: 0.8rem;
-            opacity: 0.7;
-            user-select: none;
-            transition: opacity 0.2s;
-        }
-        
-        .subtask-toggle:hover {
-            opacity: 1;
-        }
-
-        .task-item.completed {
-            opacity: 0.6;
-            background: #f9f9f9;
-        }
-
-        .task-item.completed .task-title {
-            text-decoration: line-through;
-        }
-
-        .task-item.overdue {
-            border-color: var(--color-error);
-            background: #fff5f5;
-        }
-
-        .task-item.due-today {
-            border-color: var(--color-warning);
-            background: #fffaf0;
-        }
-
-        .task-checkbox {
-            width: 20px;
-            height: 20px;
-            margin-right: 1rem;
-            cursor: pointer;
-            border: 1px solid var(--color-border);
-            background: var(--color-bg);
-            position: relative;
-            flex-shrink: 0;
-        }
-
-        .task-checkbox.checked::after {
-            content: '✓';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-weight: bold;
-        }
-
-        .task-content {
-            flex: 1;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        .task-main {
-            flex: 1;
-        }
-
-        .task-title {
-            font-weight: 500;
-            margin-bottom: 0.25rem;
-        }
-
-        .task-meta {
-            display: flex;
-            gap: 1rem;
-            align-items: center;
-            font-size: 0.9rem;
-            color: var(--color-muted);
-            flex-wrap: wrap;
-        }
-
-        .task-category {
-            color: var(--color-primary);
-            font-weight: bold;
-        }
-
-        .task-effort {
-            font-weight: bold;
-        }
-
-        .task-friction {
-            display: inline-block;
-        }
-
-        .task-due {
-            color: inherit;
-            font-weight: bold;
-        }
-
-        .task-xp {
-            font-size: 1.1rem;
-            font-weight: bold;
-            color: var(--color-primary);
-            background: var(--color-light-gray);
-            padding: 0.25rem 0.75rem;
-            border: 1px solid var(--color-border);
-            white-space: nowrap;
-        }
-
-        .task-actions {
-            display: flex;
-            gap: 0.5rem;
-            margin-left: 0.5rem;
-        }
-
-        .work-btn {
-            padding: 0.25rem 0.75rem;
-            background: var(--color-primary);
-            color: white;
-            border: none;
-            cursor: pointer;
-            font-family: var(--font-mono);
-            font-size: 0.9rem;
-            transition: all 0.2s;
-        }
-
-        .work-btn:hover {
-            background: #0030cc;
-            transform: translateY(-1px);
-        }
-
-        .subtask-btn {
-            padding: 0.25rem 0.5rem;
-            font-size: 0.8rem;
-            background: var(--color-success);
-            color: white;
-            border: none;
-            cursor: pointer;
-            font-family: var(--font-mono);
-            margin-left: 0.5rem;
-            transition: all 0.2s;
-        }
-
-        .subtask-btn:hover {
-            background: #22c55e;
-            transform: translateY(-1px);
-        }
-
-        .subtask-input {
-            margin-top: 0.5rem;
-            padding: 0.5rem;
-            background: #f8f9fa;
-            border: 1px solid var(--color-border);
-        }
-
-        .subtask-input input {
-            width: 100%;
-            padding: 0.25rem;
-            border: 1px solid var(--color-border);
-            font-family: var(--font-mono);
-        }
-
-        .subtask-input .subtask-actions {
-            margin-top: 0.5rem;
-            display: flex;
-            gap: 0.5rem;
-        }
-
-        .subtask-input button {
-            padding: 0.25rem 0.5rem;
-            font-size: 0.8rem;
-            border: none;
-            cursor: pointer;
-            font-family: var(--font-mono);
-        }
-
-        .save-subtask {
-            background: var(--color-success);
-            color: white;
-        }
-
-        .cancel-subtask {
-            background: #666;
-            color: white;
-        }
-
-        .task-progress {
-            width: 60px;
-            height: 6px;
-            background: #eee;
-            border: 1px solid var(--color-border);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .task-progress-fill {
-            height: 100%;
-            background: var(--color-success);
-            transition: width 0.3s ease;
-        }
-
-        /* Ideas Section */
-        .ideas-section {
-            background: var(--color-light-gray);
-            border: 1px dashed var(--color-border);
-            padding: 1rem;
-            margin-top: 2rem;
-        }
-
-        .idea-item {
-            padding: 0.5rem;
-            margin-bottom: 0.5rem;
-            color: var(--color-muted);
-            font-style: italic;
-            border-left: 3px solid var(--color-muted);
-            padding-left: 1rem;
-        }
-
-        /* Palette Modal */
-        .palette-modal {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: var(--color-bg);
-            border: 2px solid var(--color-border);
-            padding: 2rem;
-            min-width: 500px;
-            z-index: 1000;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        }
-
-        .palette-title {
-            font-weight: bold;
-            margin-bottom: 1rem;
-            text-align: center;
-            font-size: 1.2rem;
-        }
-
-        .palette-field {
-            margin-bottom: 1.5rem;
-        }
-
-        .palette-label {
-            font-weight: bold;
-            margin-bottom: 0.5rem;
-            display: block;
-        }
-
-        .palette-options {
-            display: flex;
-            gap: 1rem;
-            flex-wrap: wrap;
-        }
-
-        .palette-option {
-            padding: 0.5rem 1rem;
-            border: 1px solid var(--color-border);
-            background: var(--color-bg);
-            cursor: pointer;
-            transition: all 0.2s;
-            position: relative;
-        }
-
-        .palette-option:hover {
-            background: #f0f0f0;
-        }
-
-        .palette-option.selected {
-            background: var(--color-success);
-        }
-
-        .xp-preview {
-            position: absolute;
-            bottom: -25px;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 0.8rem;
-            color: var(--color-primary);
-            font-weight: bold;
-            white-space: nowrap;
-        }
-
-        .palette-actions {
-            display: flex;
-            gap: 1rem;
-            justify-content: center;
-            margin-top: 2rem;
-        }
-
-        .palette-btn {
-            padding: 0.5rem 2rem;
-            border: 1px solid var(--color-border);
-            background: var(--color-bg);
-            cursor: pointer;
-            font-family: var(--font-mono);
-        }
-
-        .palette-btn:hover {
-            background: var(--color-success);
-        }
-
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.3);
-            z-index: 999;
-        }
-
-        /* Confetti */
-        .confetti-container {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 9999;
-        }
-
-        .confetti-piece {
-            position: absolute;
-            width: 10px;
-            height: 10px;
-            background: var(--color-primary);
-            animation: confetti-fall 0.8s ease-out forwards;
-        }
-
-        @keyframes confetti-fall {
-            0% {
-                transform: translateY(0) rotate(0deg);
-                opacity: 1;
-            }
-            100% {
-                transform: translateY(300px) rotate(720deg);
-                opacity: 0;
-            }
-        }
-
-        /* Toast */
-        .toast {
-            position: fixed;
-            bottom: 2rem;
-            left: 50%;
-            transform: translateX(-50%);
-            background: var(--color-success);
-            border: 1px solid var(--color-border);
-            padding: 1rem 2rem;
-            animation: slide-up 0.3s ease-out;
-            font-weight: bold;
-            z-index: 1000;
-        }
-
-        @keyframes slide-up {
-            from {
-                transform: translate(-50%, 100%);
-                opacity: 0;
-            }
-            to {
-                transform: translate(-50%, 0);
-                opacity: 1;
-            }
-        }
-
-        /* Hidden */
-        .hidden {
-            display: none !important;
-        }
-
-        /* Top 5 Indicator */
-        .top-5-indicator {
-            display: inline-block;
-            background: var(--color-primary);
-            color: white;
-            padding: 0.1rem 0.5rem;
-            font-size: 0.8rem;
-            font-weight: bold;
-            margin-left: 0.5rem;
-        }
-        
-        /* Switch Task Modal */
-        .switch-modal {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: white;
-            border: 2px solid var(--color-border);
-            padding: 2rem;
-            z-index: 1001;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-            text-align: center;
-            max-width: 400px;
-        }
-
-        .switch-modal h3 {
-            margin-bottom: 1rem;
-            color: var(--color-error);
-        }
-
-        .switch-modal p {
-            margin-bottom: 1.5rem;
-            color: var(--color-muted);
-        }
-
-        .switch-modal-buttons {
-            display: flex;
-            gap: 1rem;
-            justify-content: center;
-        }
-
-        .switch-modal button {
-            padding: 0.5rem 1.5rem;
-            border: 1px solid var(--color-border);
-            background: var(--color-bg);
-            cursor: pointer;
-            font-family: var(--font-mono);
-        }
-
-        .switch-modal button.confirm {
-            background: var(--color-error);
-            color: white;
-        }
-
-        .countdown {
-            font-size: 2rem;
-            font-weight: bold;
-            color: var(--color-primary);
-            margin: 1rem 0;
-        }
-
-        /* Empty State */
-        .empty-state {
-            text-align: center;
-            padding: 3rem;
-            color: var(--color-muted);
-            font-style: italic;
-        }
-    </style>
+    <link rel="stylesheet" href="assets/css/main.css">
 </head>
 <body>
     <h1>Confetti Todo</h1>
     
     <div class="app-layout">
         <div class="main-content">
+            <!-- North Star Task -->
+            <div class="north-star-section" id="north-star-section">
+                <div class="north-star-icon">⭐</div>
+                <div class="north-star-content">
+                    <div class="north-star-label">Today's North Star</div>
+                    <div class="north-star-title" id="north-star-title"></div>
+                    <div class="north-star-meta">
+                        <span id="north-star-category"></span>
+                        <span id="north-star-effort"></span>
+                        <span class="north-star-xp" id="north-star-xp"></span>
+                    </div>
+                </div>
+                <div class="north-star-actions">
+                    <button class="work-btn" id="north-star-work" title="Work on this">▶</button>
+                    <button class="uncrown-btn" id="north-star-uncrown" title="Remove star">✕</button>
+                </div>
+            </div>
+            
             <!-- Working Zone -->
             <div class="working-zone empty" id="working-zone">
                 <div class="working-empty">
@@ -902,8 +60,15 @@
             <!-- Tasks -->
             <div class="task-section">
                 <div class="section-header">
-                    <span>Tasks (<span id="task-count">0</span>)</span>
-                    <span class="task-count-info" id="task-display-info"></span>
+                    <div class="task-header-left">
+                        <span>Tasks (<span id="task-count">0</span>)</span>
+                        <span class="task-count-info" id="task-display-info"></span>
+                    </div>
+                    <div class="search-morphing" id="search-morphing">
+                        <div class="search-icon-morph" id="search-icon-morph">🔍</div>
+                        <input type="text" class="search-input-morph" id="search-input" placeholder="Start typing...">
+                        <div class="search-clear-morph" id="search-clear">✕</div>
+                    </div>
                 </div>
                 <ul class="task-list" id="task-list"></ul>
                 <button class="show-more-btn hidden" id="show-more-btn">Show More Tasks</button>
@@ -913,9 +78,12 @@
             </div>
 
             <!-- Ideas -->
-            <div class="ideas-section">
-                <div class="section-header">💡 Ideas (<span id="ideas-count">0</span>)</div>
-                <div id="ideas-list"></div>
+            <div class="ideas-section" id="ideas-section">
+                <div class="ideas-header" onclick="toggleIdeasSection()">
+                    <div class="section-header">💡 Ideas (<span id="ideas-count">0</span>)</div>
+                    <span class="ideas-toggle">▼</span>
+                </div>
+                <div id="ideas-list" class="ideas-list"></div>
             </div>
         </div>
         
@@ -940,12 +108,12 @@
                 <div class="widget-title">Today's Stats</div>
                 <div class="today-stats">
                     <div class="stat-item">
-                        <div class="stat-value" id="tasks-today">0</div>
-                        <div>Completed</div>
+                        <span class="stat-value" id="tasks-today">0</span>
+                        <span class="stat-label">tasks completed</span>
                     </div>
                     <div class="stat-item">
-                        <div class="stat-value" id="xp-today">0</div>
-                        <div>XP Earned</div>
+                        <span class="stat-value" id="xp-today">0</span>
+                        <span class="stat-label">XP earned</span>
                     </div>
                 </div>
             </div>
@@ -961,64 +129,68 @@
     </div>
 
     <!-- Palette Modal -->
-    <div id="palette-modal" class="hidden">
+    <div id="palette-modal" class="hidden" role="dialog" aria-labelledby="palette-dialog-title" aria-modal="true">
         <div class="modal-overlay" id="modal-overlay"></div>
         <div class="palette-modal">
-            <div class="palette-title">Quick Settings — press a number, then Enter</div>
+            <div class="palette-title" id="palette-dialog-title">Quick Settings — press a number, then Enter</div>
+            <div class="sr-only" aria-live="polite">Use arrow keys to navigate between fields, number keys to select options</div>
+            <div class="keyboard-hints" style="text-align: center; font-size: 0.9rem; color: var(--color-muted); margin-bottom: 1rem;">
+                <kbd>↑↓</kbd> Navigate fields · <kbd>←→</kbd> Navigate options · <kbd>1-6</kbd> Select · <kbd>Space</kbd> Choose
+            </div>
             
             <div class="palette-field">
                 <div class="palette-label">Title: <span id="palette-title"></span></div>
             </div>
             
-            <div class="palette-field">
-                <div class="palette-label">Category (default ☑ Other)</div>
-                <div class="palette-options" id="category-options">
-                    <div class="palette-option selected" data-value="other"><kbd>1</kbd> Other</div>
-                    <div class="palette-option" data-value="admin"><kbd>2</kbd> Admin</div>
-                    <div class="palette-option" data-value="selling"><kbd>3</kbd> Selling</div>
-                    <div class="palette-option" data-value="research"><kbd>4</kbd> Research</div>
-                    <div class="palette-option" data-value="product"><kbd>5</kbd> Product</div>
-                    <div class="palette-option" data-value="hiring"><kbd>6</kbd> Hiring</div>
+            <div class="palette-field" id="category-field" role="group" aria-labelledby="category-label">
+                <div class="palette-label" id="category-label">Category (default ☑ Other)</div>
+                <div class="palette-options" id="category-options" role="radiogroup" aria-labelledby="category-label">
+                    <div class="palette-option" data-value="admin" role="radio" aria-checked="false"><kbd>1</kbd> Admin</div>
+                    <div class="palette-option" data-value="selling" role="radio" aria-checked="false"><kbd>2</kbd> Selling</div>
+                    <div class="palette-option" data-value="research" role="radio" aria-checked="false"><kbd>3</kbd> Research</div>
+                    <div class="palette-option" data-value="product" role="radio" aria-checked="false"><kbd>4</kbd> Product</div>
+                    <div class="palette-option" data-value="hiring" role="radio" aria-checked="false"><kbd>5</kbd> Hiring</div>
+                    <div class="palette-option selected" data-value="other" role="radio" aria-checked="true"><kbd>6</kbd> Other</div>
                 </div>
             </div>
             
-            <div class="palette-field">
-                <div class="palette-label">Priority (default ☑ Medium)</div>
-                <div class="palette-options" id="priority-options">
-                    <div class="palette-option" data-value="1"><kbd>1</kbd> Low</div>
-                    <div class="palette-option selected" data-value="2"><kbd>2</kbd> Medium</div>
-                    <div class="palette-option" data-value="3"><kbd>3</kbd> High</div>
+            <div class="palette-field" id="priority-field" role="group" aria-labelledby="priority-label">
+                <div class="palette-label" id="priority-label">Priority (default ☑ Medium)</div>
+                <div class="palette-options" id="priority-options" role="radiogroup" aria-labelledby="priority-label">
+                    <div class="palette-option" data-value="1" role="radio" aria-checked="false"><kbd>1</kbd> Low</div>
+                    <div class="palette-option selected" data-value="2" role="radio" aria-checked="true"><kbd>2</kbd> Medium</div>
+                    <div class="palette-option" data-value="3" role="radio" aria-checked="false"><kbd>3</kbd> High</div>
                 </div>
             </div>
             
-            <div class="palette-field">
-                <div class="palette-label">Effort (default ☑ 30m)</div>
-                <div class="palette-options" id="effort-options">
-                    <div class="palette-option" data-value="15m">
+            <div class="palette-field" id="effort-field" role="group" aria-labelledby="effort-label">
+                <div class="palette-label" id="effort-label">Effort (default ☑ 30m)</div>
+                <div class="palette-options" id="effort-options" role="radiogroup" aria-labelledby="effort-label">
+                    <div class="palette-option" data-value="15m" role="radio" aria-checked="false">
                         <kbd>1</kbd> 15m
                         <div class="xp-preview" id="xp-15m"></div>
                     </div>
-                    <div class="palette-option selected" data-value="30m">
+                    <div class="palette-option selected" data-value="30m" role="radio" aria-checked="true">
                         <kbd>2</kbd> 30m
                         <div class="xp-preview" id="xp-30m"></div>
                     </div>
-                    <div class="palette-option" data-value="1h">
+                    <div class="palette-option" data-value="1h" role="radio" aria-checked="false">
                         <kbd>3</kbd> 1h
                         <div class="xp-preview" id="xp-1h"></div>
                     </div>
-                    <div class="palette-option" data-value="4h">
+                    <div class="palette-option" data-value="4h" role="radio" aria-checked="false">
                         <kbd>4</kbd> ½-day
                         <div class="xp-preview" id="xp-4h"></div>
                     </div>
                 </div>
             </div>
             
-            <div class="palette-field">
-                <div class="palette-label">Friction (default ☑ 🧱)</div>
-                <div class="palette-options" id="friction-options">
-                    <div class="palette-option selected" data-value="1"><kbd>1</kbd> 🧱</div>
-                    <div class="palette-option" data-value="2"><kbd>2</kbd> 🧱🧱</div>
-                    <div class="palette-option" data-value="3"><kbd>3</kbd> 🧱🧱🧱</div>
+            <div class="palette-field" id="friction-field" role="group" aria-labelledby="friction-label">
+                <div class="palette-label" id="friction-label">Friction (default ☑ 🍃)</div>
+                <div class="palette-options" id="friction-options" role="radiogroup" aria-labelledby="friction-label">
+                    <div class="palette-option selected" data-value="1" role="radio" aria-checked="true"><kbd>1</kbd> 🍃</div>
+                    <div class="palette-option" data-value="2" role="radio" aria-checked="false"><kbd>2</kbd> 💨</div>
+                    <div class="palette-option" data-value="3" role="radio" aria-checked="false"><kbd>3</kbd> 🌪️</div>
                 </div>
             </div>
             
@@ -1032,7 +204,9 @@
     <!-- Confetti Container -->
     <div class="confetti-container" id="confetti-container"></div>
 
+    <!-- Main application script -->
     <script>
+        // Keep minimal global variables for inline event handlers
         const API_URL = 'http://localhost:8000';
         let ws = null;
         let currentData = { today: [], ideas: [], backlog: [] };
@@ -1046,6 +220,157 @@
         let draggedElement = null;
         let showAllTasks = false;
         let expandedTasks = new Set(); // Track which tasks are expanded
+        let northStarTask = null; // Today's North Star task
+        let searchTerm = ''; // Current search term
+
+        // Focus management for palette
+        class PaletteFocusManager {
+            constructor() {
+                this.fields = ['category-options', 'priority-options', 'effort-options', 'friction-options'];
+                this.currentFieldIndex = 0;
+                this.currentOptionIndex = 0;
+                this.isNavigating = false;
+            }
+
+            init() {
+                const modal = document.getElementById('palette-modal');
+                const mode = modal.dataset.mode || 'task';
+                
+                // In idea mode, only focus on visible fields
+                if (mode === 'idea') {
+                    this.fields = ['category-options'];
+                    // Add other fields if they become visible
+                    if (!document.getElementById('priority-field').classList.contains('hidden')) {
+                        this.fields = ['category-options', 'priority-options', 'effort-options', 'friction-options'];
+                    }
+                } else {
+                    this.fields = ['category-options', 'priority-options', 'effort-options', 'friction-options'];
+                }
+                
+                this.currentFieldIndex = 0;
+                this.currentOptionIndex = this.getSelectedIndex(this.fields[0]) || 0;
+                this.updateFieldFocus();
+                this.updateOptionFocus();
+            }
+
+            navigateFields(direction) {
+                this.currentFieldIndex = Math.max(0, Math.min(this.fields.length - 1, this.currentFieldIndex + direction));
+                this.currentOptionIndex = this.getSelectedIndex(this.fields[this.currentFieldIndex]) || 0;
+                this.updateFieldFocus();
+                this.updateOptionFocus();
+                this.announceField();
+            }
+
+            navigateOptions(direction) {
+                const field = document.getElementById(this.fields[this.currentFieldIndex]);
+                const options = field.querySelectorAll('.palette-option');
+                this.currentOptionIndex = Math.max(0, Math.min(options.length - 1, this.currentOptionIndex + direction));
+                this.updateOptionFocus();
+            }
+
+            selectByNumber(num) {
+                const field = document.getElementById(this.fields[this.currentFieldIndex]);
+                const options = field.querySelectorAll('.palette-option');
+                const targetIndex = num - 1; // All fields use 0-based index
+                
+                if (options[targetIndex]) {
+                    this.currentOptionIndex = targetIndex;
+                    this.selectCurrentOption();
+                    this.updateOptionFocus();
+                }
+            }
+
+            selectCurrentOption() {
+                const field = document.getElementById(this.fields[this.currentFieldIndex]);
+                const options = field.querySelectorAll('.palette-option');
+                
+                // Remove selected from all options in this field
+                options.forEach(opt => {
+                    opt.classList.remove('selected');
+                    opt.setAttribute('aria-checked', 'false');
+                });
+                
+                // Add selected to current option
+                if (options[this.currentOptionIndex]) {
+                    options[this.currentOptionIndex].classList.add('selected');
+                    options[this.currentOptionIndex].setAttribute('aria-checked', 'true');
+                    
+                    // Update XP previews if friction field
+                    if (this.fields[this.currentFieldIndex] === 'friction-options') {
+                        updateXPPreviews();
+                    }
+                }
+            }
+
+            getSelectedIndex(fieldId) {
+                const field = document.getElementById(fieldId);
+                const options = field.querySelectorAll('.palette-option');
+                let selectedIndex = 0;
+                options.forEach((opt, index) => {
+                    if (opt.classList.contains('selected')) {
+                        selectedIndex = index;
+                    }
+                });
+                return selectedIndex;
+            }
+
+            updateFieldFocus() {
+                // Remove all field focus
+                document.querySelectorAll('.palette-field').forEach(field => {
+                    field.classList.remove('focused');
+                    field.removeAttribute('aria-current');
+                });
+
+                // Add focus to current field
+                const currentFieldElement = document.getElementById(this.fields[this.currentFieldIndex]);
+                if (currentFieldElement) {
+                    const fieldContainer = currentFieldElement.closest('.palette-field');
+                    fieldContainer.classList.add('focused');
+                    fieldContainer.setAttribute('aria-current', 'true');
+                }
+            }
+
+            updateOptionFocus() {
+                // Remove all option focus
+                document.querySelectorAll('.palette-option').forEach(opt => {
+                    opt.classList.remove('keyboard-focus');
+                    opt.removeAttribute('aria-selected');
+                    opt.tabIndex = -1;
+                });
+
+                // Add focus to current option
+                const field = document.getElementById(this.fields[this.currentFieldIndex]);
+                const options = field.querySelectorAll('.palette-option');
+                if (options[this.currentOptionIndex]) {
+                    options[this.currentOptionIndex].classList.add('keyboard-focus');
+                    options[this.currentOptionIndex].setAttribute('aria-selected', 'true');
+                    options[this.currentOptionIndex].tabIndex = 0;
+                    // Don't auto-focus to prevent scroll jumping
+                    if (this.isNavigating) {
+                        options[this.currentOptionIndex].focus({ preventScroll: true });
+                    }
+                }
+            }
+
+            announceField() {
+                // For screen readers
+                const fieldLabels = {
+                    'category-options': 'Category field',
+                    'priority-options': 'Priority field',
+                    'effort-options': 'Effort field',
+                    'friction-options': 'Friction field'
+                };
+                
+                const announcement = document.createElement('div');
+                announcement.className = 'sr-only';
+                announcement.setAttribute('aria-live', 'polite');
+                announcement.textContent = `Now in ${fieldLabels[this.fields[this.currentFieldIndex]]}`;
+                document.body.appendChild(announcement);
+                setTimeout(() => announcement.remove(), 1000);
+            }
+        }
+
+        const paletteFocusManager = new PaletteFocusManager();
 
         // Initialize WebSocket
         function initWebSocket() {
@@ -1124,6 +449,12 @@
                     updateWorkingZone();
                 }
             }
+            
+            // Restore UI state on initial load
+            if (!window.uiStateRestored) {
+                window.uiStateRestored = true;
+                restoreUIState();
+            }
         }
 
         function collectTasks(task, section, parentTask = null) {
@@ -1191,50 +522,108 @@
             });
         }
 
+        // Search functionality
+        function searchTasks(tasks, searchQuery) {
+            const query = searchQuery.toLowerCase().trim();
+            if (!query) return tasks;
+            
+            const matchingTasks = new Set();
+            const tasksToReturn = new Set();
+            
+            // Search through all tasks and subtasks
+            function searchInTask(task, parentTask = null) {
+                const taskMatches = task.title.toLowerCase().includes(query) || 
+                                  (task.category && task.category.toLowerCase().includes(query));
+                
+                if (taskMatches) {
+                    matchingTasks.add(task);
+                    // If this is a subtask that matches, include its parent
+                    if (parentTask && !parentTask.is_completed) {
+                        tasksToReturn.add(parentTask);
+                    } else if (!parentTask && !task.is_completed) {
+                        // If this is a top-level task that matches, include it
+                        tasksToReturn.add(task);
+                    }
+                }
+                
+                // Search in subtasks
+                if (task.subtasks && task.subtasks.length > 0) {
+                    task.subtasks.forEach(subtask => {
+                        searchInTask(subtask, task);
+                    });
+                    
+                    // If any subtask matches, include the parent task
+                    const hasMatchingSubtask = task.subtasks.some(st => matchingTasks.has(st));
+                    if (hasMatchingSubtask && !task.is_completed) {
+                        tasksToReturn.add(task);
+                    }
+                }
+            }
+            
+            // Search through all tasks
+            tasks.forEach(task => searchInTask(task));
+            
+            // Return all matching tasks (both top-level and parents with matching subtasks)
+            return Array.from(tasksToReturn);
+        }
+
         // Render tasks
         function renderTasks() {
             const container = document.getElementById('task-list');
             container.innerHTML = '';
             
-            const filteredTasks = filterTasks(allTasks);
-            const sortedTasks = sortTasks(filteredTasks);
+            let tasksToDisplay = [];
             
-            // Only show parent tasks, subtasks are shown under their parents
-            const parentTasks = sortedTasks.filter(task => !task.parentTask && !task.is_completed);
+            if (searchTerm) {
+                // Search mode: find matching tasks and subtasks
+                const searchResults = searchTasks(allTasks, searchTerm);
+                tasksToDisplay = searchResults.filter(task => !task.is_completed);
+                
+                // Always show all results in search mode
+                showAllTasks = true;
+            } else {
+                // Normal mode
+                const filteredTasks = filterTasks(allTasks);
+                const sortedTasks = sortTasks(filteredTasks);
+                tasksToDisplay = sortedTasks.filter(task => !task.parentTask && !task.is_completed);
+            }
             
-            if (parentTasks.length === 0) {
+            if (tasksToDisplay.length === 0) {
                 document.getElementById('empty-state').classList.remove('hidden');
                 document.getElementById('show-more-btn').classList.add('hidden');
-                document.getElementById('task-display-info').textContent = '';
+                document.getElementById('task-display-info').textContent = searchTerm ? 'No matching tasks found' : '';
             } else {
                 document.getElementById('empty-state').classList.add('hidden');
                 
-                // Limit to top 5 unless showing all
-                const tasksToShow = showAllTasks ? parentTasks : parentTasks.slice(0, 5);
-                const hasMore = parentTasks.length > 5;
+                // In search mode, show all; otherwise limit to top 5
+                const tasksToShow = (searchTerm || showAllTasks) ? tasksToDisplay : tasksToDisplay.slice(0, 5);
+                const hasMore = !searchTerm && tasksToDisplay.length > 5;
                 
                 tasksToShow.forEach((task, index) => {
                     const element = createTaskElement(task);
-                    if (index < 5 && !showAllTasks) {
+                    if (index < 5 && !showAllTasks && !searchTerm) {
                         element.classList.add('top-5');
                     }
                     container.appendChild(element);
                     
-                    // Add subtasks if parent is expanded
-                    if (element.classList.contains('subtasks-expanded')) {
-                        const subtasks = sortedTasks.filter(t => t.parentTask && t.parentTask.id === task.id);
-                        subtasks.forEach(subtask => {
+                    // Add subtasks if parent is expanded or in search mode
+                    if ((expandedTasks.has(task.id) || searchTerm) && task.subtasks && task.subtasks.length > 0) {
+                        task.subtasks.forEach(subtask => {
                             const subtaskElement = createTaskElement(subtask, true);
+                            subtaskElement.classList.add('visible');
                             container.appendChild(subtaskElement);
                         });
                     }
                 });
                 
                 // Update display info and show more button
-                if (hasMore) {
-                    const remaining = parentTasks.length - 5;
+                if (searchTerm) {
+                    document.getElementById('task-display-info').textContent = `(${tasksToDisplay.length} matching tasks)`;
+                    document.getElementById('show-more-btn').classList.add('hidden');
+                } else if (hasMore) {
+                    const remaining = tasksToDisplay.length - 5;
                     document.getElementById('task-display-info').textContent = 
-                        showAllTasks ? `(showing all ${parentTasks.length} tasks)` : `(showing top 5)`;
+                        showAllTasks ? `(showing all ${tasksToDisplay.length} tasks)` : `(showing top 5)`;
                     
                     const showMoreBtn = document.getElementById('show-more-btn');
                     showMoreBtn.textContent = showAllTasks ? 'Show Only Top 5' : `Show ${remaining} More Tasks`;
@@ -1326,7 +715,8 @@
             if (task.friction) {
                 const friction = document.createElement('span');
                 friction.className = 'task-friction';
-                friction.textContent = '🧱'.repeat(task.friction);
+                const frictionIcons = ['', '🍃', '💨', '🌪️'];
+                friction.textContent = frictionIcons[task.friction] || '🍃';
                 meta.appendChild(friction);
             }
             
@@ -1391,7 +781,9 @@
                 
                 const workBtn = document.createElement('button');
                 workBtn.className = 'work-btn';
-                workBtn.textContent = workingTask?.id === task.id ? 'Working' : 'Work on this';
+                // Use HTML entities for better compatibility across browsers
+                workBtn.innerHTML = workingTask?.id === task.id ? '&#9208;' : '&#9654;';
+                workBtn.title = workingTask?.id === task.id ? 'Working' : 'Work on this';
                 workBtn.disabled = workingTask?.id === task.id;
                 workBtn.onclick = (e) => {
                     e.stopPropagation();
@@ -1403,10 +795,23 @@
                 };
                 actions.appendChild(workBtn);
                 
+                // Add crown button if not already crowned
+                if (!northStarTask || northStarTask.id !== task.id) {
+                    const crownBtn = document.createElement('button');
+                    crownBtn.className = 'crown-btn';
+                    crownBtn.innerHTML = '⭐';
+                    crownBtn.title = 'Set as North Star';
+                    crownBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        setNorthStar(task, !northStarTask); // Only give XP if no North Star is set
+                    };
+                    actions.appendChild(crownBtn);
+                }
+                
                 // Add subtask button
                 const subtaskBtn = document.createElement('button');
                 subtaskBtn.className = 'subtask-btn';
-                subtaskBtn.textContent = '+ Subtask';
+                subtaskBtn.textContent = '+ Add Subtask';
                 subtaskBtn.onclick = (e) => {
                     e.stopPropagation();
                     showSubtaskInput(task);
@@ -1427,10 +832,10 @@
             container.innerHTML = '';
             
             const ideas = [];
-            Object.values(currentData).forEach(section => {
-                section.forEach(task => {
+            Object.entries(currentData).forEach(([section, tasks]) => {
+                tasks.forEach(task => {
                     if (task.is_idea) {
-                        ideas.push(task);
+                        ideas.push({ ...task, section });
                     }
                 });
             });
@@ -1438,10 +843,40 @@
             ideas.forEach(idea => {
                 const div = document.createElement('div');
                 div.className = 'idea-item';
-                div.textContent = `? ${idea.title}`;
+                div.dataset.ideaId = idea.id;
+                div.dataset.section = idea.section;
+                
+                const text = document.createElement('span');
+                text.textContent = `💡 ${idea.title}`;
                 if (idea.category) {
-                    div.textContent += ` @${idea.category}`;
+                    text.textContent += ` @${idea.category}`;
                 }
+                div.appendChild(text);
+                
+                // Create actions container
+                const actions = document.createElement('div');
+                actions.className = 'idea-actions';
+                
+                const convertBtn = document.createElement('button');
+                convertBtn.className = 'convert-btn';
+                convertBtn.textContent = '→ Convert to Task';
+                convertBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    convertIdeaToTask(idea);
+                };
+                actions.appendChild(convertBtn);
+                
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'delete-btn';
+                deleteBtn.textContent = '✕ Delete';
+                deleteBtn.title = 'Delete idea';
+                deleteBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    deleteIdea(idea);
+                };
+                actions.appendChild(deleteBtn);
+                
+                div.appendChild(actions);
                 container.appendChild(div);
             });
         }
@@ -1482,6 +917,7 @@
             workingStartTime = new Date();
             updateWorkingZone();
             startWorkingTimer();
+            saveUIState();
         }
         
         function stopWorking() {
@@ -1492,6 +928,7 @@
             workingTask = null;
             workingStartTime = null;
             updateWorkingZone();
+            saveUIState();
         }
         
         function updateWorkingZone() {
@@ -1501,8 +938,7 @@
                 zone.classList.add('empty');
                 zone.innerHTML = `
                     <div class="working-empty">
-                        <div class="working-title">Click on a task to start working on it</div>
-                        <div>Focus on one thing at a time</div>
+                        Click on a task to start working on it
                     </div>
                 `;
             } else {
@@ -1510,22 +946,26 @@
                 const elapsed = workingStartTime ? Math.floor((new Date() - workingStartTime) / 1000) : 0;
                 const minutes = Math.floor(elapsed / 60);
                 const seconds = elapsed % 60;
+                const progressPercent = Math.min((elapsed / (30 * 60)) * 100, 100); // 30 min = 100%
                 
                 zone.innerHTML = `
                     <div class="working-task">
-                        <div class="working-title">${workingTask.title}</div>
-                        <div class="working-meta">
-                            ${workingTask.category ? `<span>@${workingTask.category}</span>` : ''}
-                            <span>${workingTask.effort || '30m'}</span>
-                            <span>${'🧱'.repeat(workingTask.friction || 2)}</span>
+                        <div class="task-checkbox ${workingTask.is_completed ? 'checked' : ''}" onclick="completeWorkingTask()"></div>
+                        <div class="working-content">
+                            <div class="working-title">${workingTask.title}</div>
+                            <div class="working-meta">
+                                ${workingTask.category ? `<span>@${workingTask.category}</span>` : ''}
+                                <span>${workingTask.effort || '30m'}</span>
+                                <span>${['', '🍃', '💨', '🌪️'][workingTask.friction || 2]}</span>
+                            </div>
                         </div>
                         <div class="working-timer">
-                            🕒 ${minutes}:${seconds.toString().padStart(2, '0')}
+                            ${minutes}:${seconds.toString().padStart(2, '0')}
                         </div>
-                        <div class="working-progress">
-                            <div class="working-progress-fill"></div>
-                        </div>
-                        <button class="stop-working-btn" onclick="stopWorking()">Stop Working</button>
+                        <button class="stop-working-btn" onclick="stopWorking()">Stop</button>
+                    </div>
+                    <div class="working-progress">
+                        <div class="working-progress-fill" style="width: ${progressPercent}%"></div>
                     </div>
                 `;
             }
@@ -1534,6 +974,222 @@
         function startWorkingTimer() {
             if (workingTimer) clearInterval(workingTimer);
             workingTimer = setInterval(updateWorkingZone, 1000);
+        }
+        
+        function completeWorkingTask() {
+            if (!workingTask) return;
+            
+            // Mark the task as completed
+            toggleTask(workingTask);
+            
+            // Stop working on it
+            stopWorking();
+        }
+        
+        // North Star Task Functions
+        function setNorthStar(task, giveXP = true) {
+            const isFirstTime = !northStarTask;
+            northStarTask = task;
+            updateNorthStarSection();
+            renderTasks();
+            
+            if (isFirstTime && giveXP) {
+                // Give 25 XP for planning
+                showToast(`⭐ Great choice! +25 XP for planning your day`);
+                // Update stats with bonus XP
+                fetch(`${API_URL}/api/stats/bonus`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ xp: 25, reason: 'north_star_set' })
+                }).then(() => loadStats());
+            } else {
+                showToast(`⭐ ${task.title} is now your North Star!`);
+            }
+            
+            saveUIState();
+        }
+        
+        function showNorthStarPicker() {
+            // Get uncompleted tasks
+            const availableTasks = allTasks.filter(t => !t.is_completed && !t.parentTask);
+            
+            if (availableTasks.length === 0) {
+                showToast('No tasks available. Add some tasks first!');
+                return;
+            }
+            
+            // Create modal
+            const overlay = document.createElement('div');
+            overlay.className = 'modal-overlay';
+            
+            const modal = document.createElement('div');
+            modal.className = 'north-star-picker-modal';
+            modal.innerHTML = `
+                <h3>Choose Your North Star Task</h3>
+                <p>Select your main focus for today and earn +25 XP!</p>
+                <div class="north-star-task-list">
+                    ${availableTasks.map(task => `
+                        <div class="north-star-option" data-task-id="${task.id}">
+                            <div class="task-title">${task.title}</div>
+                            <div class="task-meta">
+                                ${task.category ? `<span>@${task.category}</span>` : ''}
+                                <span>${task.effort || '30m'}</span>
+                                <span>${calculateXP(task) * 3} XP (3x bonus)</span>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+                <button class="cancel-btn" onclick="closeNorthStarPicker()">Cancel</button>
+            `;
+            
+            document.body.appendChild(overlay);
+            document.body.appendChild(modal);
+            
+            // Add click handlers
+            modal.querySelectorAll('.north-star-option').forEach(option => {
+                option.onclick = () => {
+                    const taskId = option.dataset.taskId;
+                    const task = allTasks.find(t => t.id === taskId);
+                    if (task) {
+                        setNorthStar(task);
+                        closeNorthStarPicker();
+                    }
+                };
+            });
+            
+            overlay.onclick = closeNorthStarPicker;
+        }
+        
+        function closeNorthStarPicker() {
+            document.querySelector('.modal-overlay')?.remove();
+            document.querySelector('.north-star-picker-modal')?.remove();
+        }
+        
+        function removeNorthStar() {
+            northStarTask = null;
+            updateNorthStarSection();
+            renderTasks();
+            saveUIState();
+        }
+        
+        function updateNorthStarSection() {
+            const section = document.getElementById('north-star-section');
+            
+            if (!northStarTask) {
+                // Show empty state
+                section.innerHTML = `
+                    <div class="north-star-empty-state">
+                        <div class="north-star-icon">⭐</div>
+                        <div class="north-star-empty-content">
+                            <div class="north-star-empty-title">What's your main focus today?</div>
+                            <button class="choose-north-star-btn" onclick="showNorthStarPicker()">
+                                Choose from your tasks ▼
+                                <span class="xp-reward">+25 XP</span>
+                            </button>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Show selected task
+            section.innerHTML = `
+                <div class="north-star-icon">⭐</div>
+                <div class="north-star-content">
+                    <div class="north-star-label">Today's North Star</div>
+                    <div class="north-star-title" id="north-star-title">${northStarTask.title}</div>
+                    <div class="north-star-meta">
+                        <span id="north-star-category">${northStarTask.category ? `@${northStarTask.category}` : ''}</span>
+                        <span id="north-star-effort">${northStarTask.effort || '30m'}</span>
+                        <span class="north-star-xp" id="north-star-xp"><strong>${calculateXP(northStarTask) * 3} XP • 3x bonus</strong></span>
+                    </div>
+                </div>
+                <div class="north-star-actions">
+                    <button class="work-btn" id="north-star-work" title="Work on this">${workingTask?.id === northStarTask.id ? '⏸' : '▶'}</button>
+                    <button class="uncrown-btn" id="north-star-uncrown" title="Remove star">✕</button>
+                </div>
+            `;
+            
+            // Re-attach event listeners
+            const workBtn = document.getElementById('north-star-work');
+            if (workBtn) {
+                workBtn.disabled = workingTask?.id === northStarTask.id;
+                workBtn.onclick = () => {
+                    if (workingTask && workingTask.id !== northStarTask.id) {
+                        showSwitchModal(northStarTask);
+                    } else if (!workingTask) {
+                        startWorkingOn(northStarTask);
+                    }
+                };
+            }
+            
+            const uncrownBtn = document.getElementById('north-star-uncrown');
+            if (uncrownBtn) {
+                uncrownBtn.onclick = removeNorthStar;
+            }
+        }
+        
+        // UI State Persistence
+        function saveUIState() {
+            const uiState = {
+                northStarTaskId: northStarTask ? northStarTask.id : null,
+                workingTaskId: workingTask ? workingTask.id : null,
+                workingStartTime: workingStartTime ? workingStartTime.toISOString() : null
+            };
+            localStorage.setItem('confettiTodoUIState', JSON.stringify(uiState));
+        }
+        
+        function restoreUIState() {
+            try {
+                const savedState = localStorage.getItem('confettiTodoUIState');
+                if (!savedState) return;
+                
+                const uiState = JSON.parse(savedState);
+                
+                // Restore North Star
+                if (uiState.northStarTaskId) {
+                    const task = findTaskById(uiState.northStarTaskId);
+                    if (task && !task.is_completed) {
+                        northStarTask = task;
+                        updateNorthStarSection();
+                    }
+                }
+                
+                // Restore Working Task
+                if (uiState.workingTaskId && uiState.workingStartTime) {
+                    const task = findTaskById(uiState.workingTaskId);
+                    if (task && !task.is_completed) {
+                        workingTask = task;
+                        workingStartTime = new Date(uiState.workingStartTime);
+                        updateWorkingZone();
+                        startWorkingTimer();
+                    }
+                }
+            } catch (error) {
+                console.error('Error restoring UI state:', error);
+            }
+        }
+        
+        function findTaskById(id) {
+            // First try to find in allTasks array (if available)
+            if (allTasks && allTasks.length > 0) {
+                const found = allTasks.find(t => t.id === id);
+                if (found) return found;
+            }
+            
+            // Fallback to searching in currentData
+            for (const section of Object.values(currentData)) {
+                for (const task of section) {
+                    if (task.id === id) return task;
+                    // Check subtasks
+                    if (task.subtasks) {
+                        for (const subtask of task.subtasks) {
+                            if (subtask.id === id) return subtask;
+                        }
+                    }
+                }
+            }
+            return null;
         }
         
         function showSwitchModal(newTask) {
@@ -1587,8 +1243,11 @@
             document.querySelector('.switch-modal')?.remove();
         };
         
-        // Make stopWorking global
+        // Make functions global
         window.stopWorking = stopWorking;
+        window.completeWorkingTask = completeWorkingTask;
+        window.showNorthStarPicker = showNorthStarPicker;
+        window.closeNorthStarPicker = closeNorthStarPicker;
 
         async function toggleTask(task) {
             const wasCompleted = task.is_completed;
@@ -1604,8 +1263,16 @@
                 
                 showConfetti();
                 playSound();
-                const xp = calculateXP(task);
-                showToast(`+${xp} XP — sweet!`);
+                let xp = calculateXP(task);
+                
+                // Apply 3x bonus if this is the North Star task
+                if (northStarTask && northStarTask.id === task.id) {
+                    xp *= 3;
+                    showToast(`+${xp} XP — North Star completed! 🌟`);
+                    removeNorthStar(); // Remove North Star after completion
+                } else {
+                    showToast(`+${xp} XP — sweet!`);
+                }
             } else {
                 task.completed_at = null;
                 
@@ -1800,9 +1467,88 @@
             oscillator.stop(audioContext.currentTime + 0.1);
         }
 
-        function showToast(message) {
+        
+        function convertIdeaToTask(idea) {
+            const ideaElement = document.querySelector(`[data-idea-id="${idea.id}"]`);
+            if (ideaElement) {
+                ideaElement.classList.add('converting');
+            }
+            
+            // Remove from ideas
+            const section = idea.section;
+            const index = currentData[section].findIndex(i => i.id === idea.id);
+            if (index > -1) {
+                currentData[section].splice(index, 1);
+            }
+            
+            // Convert to task
+            const task = {
+                ...idea,
+                is_idea: false,
+                effort: '30m',
+                friction: 2
+            };
+            
+            // Add to today section
+            currentData.today.unshift(task);
+            
+            setTimeout(() => {
+                saveTodos();
+                renderTasks();
+                renderIdeas();
+                updateCounts();
+                showCelebrationToast('🌱 Idea sprouted into task!');
+            }, 600);
+        }
+        
+        function deleteIdea(idea) {
+            // Add confirmation
+            if (!confirm(`Delete idea "${idea.title}"?`)) {
+                return;
+            }
+            
+            // Remove from data
+            const section = idea.section;
+            const index = currentData[section].findIndex(i => i.id === idea.id);
+            if (index > -1) {
+                currentData[section].splice(index, 1);
+            }
+            
+            // Update UI
+            saveTodos();
+            renderIdeas();
+            updateCounts();
+            
+            showToast('🗑️ Idea deleted');
+        }
+        
+        function toggleIdeasSection() {
+            const section = document.getElementById('ideas-section');
+            section.classList.toggle('collapsed');
+            
+            // Save preference
+            localStorage.setItem('ideas-collapsed', section.classList.contains('collapsed'));
+        }
+        
+        function showCelebrationToast(message) {
+            // Remove any existing celebration toasts
+            document.querySelectorAll('.celebration-toast').forEach(t => t.remove());
+            
             const toast = document.createElement('div');
-            toast.className = 'toast';
+            toast.className = 'celebration-toast';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => toast.classList.add('show'), 10);
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+        
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
             toast.textContent = message;
             document.body.appendChild(toast);
             
@@ -1897,36 +1643,84 @@
         // Save todos
         async function saveTodos() {
             try {
-                await fetch(`${API_URL}/api/todos`, {
+                const response = await fetch(`${API_URL}/api/todos`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(currentData)
                 });
+                
+                if (!response.ok) {
+                    const errorData = await response.text();
+                    console.error('Server error:', errorData);
+                    showToast('Failed to save task. Please try again.', 'error');
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
             } catch (error) {
                 console.error('Error saving todos:', error);
+                showToast('Failed to save task. Please check your connection.', 'error');
             }
         }
 
         // Palette handling
-        function showPalette(title) {
+        function showPalette(title, mode = 'task') {
+            const modal = document.getElementById('palette-modal');
+            modal.dataset.mode = mode;
+            
             document.getElementById('palette-title').textContent = title;
-            document.getElementById('palette-modal').classList.remove('hidden');
-            updateXPPreviews();
+            modal.classList.remove('hidden');
+            
+            // Update modal title and hints based on mode
+            const dialogTitle = document.getElementById('palette-dialog-title');
+            const keyboardHints = modal.querySelector('.keyboard-hints');
+            
+            if (mode === 'idea') {
+                dialogTitle.innerHTML = '💡 Capture an idea — low commitment';
+                keyboardHints.innerHTML = '<kbd>Enter</kbd> Save · <kbd>Tab</kbd> More options · <kbd>Esc</kbd> Cancel';
+                
+                // Hide non-essential fields for ideas
+                ['priority-field', 'effort-field', 'friction-field'].forEach(fieldId => {
+                    const field = document.getElementById(fieldId);
+                    if (field) field.classList.add('hidden');
+                });
+                
+                // Show simpler action buttons
+                document.getElementById('palette-save').textContent = 'Enter = Capture Idea';
+            } else {
+                dialogTitle.innerHTML = '⚡ Quick Settings — press a number, then Enter';
+                keyboardHints.innerHTML = '<kbd>↑↓</kbd> Navigate fields · <kbd>←→</kbd> Navigate options · <kbd>1-6</kbd> Select · <kbd>Space</kbd> Choose';
+                
+                // Show all fields for tasks
+                ['priority-field', 'effort-field', 'friction-field'].forEach(fieldId => {
+                    const field = document.getElementById(fieldId);
+                    if (field) field.classList.remove('hidden');
+                });
+                
+                document.getElementById('palette-save').textContent = 'Enter = Save Task';
+                updateXPPreviews();
+            }
             
             // Reset selections
             document.querySelectorAll('.palette-option').forEach(opt => {
                 if (opt.parentElement.id === 'category-options' && opt.dataset.value === 'other') {
                     opt.classList.add('selected');
+                    opt.setAttribute('aria-checked', 'true');
                 } else if (opt.parentElement.id === 'priority-options' && opt.dataset.value === '2') {
                     opt.classList.add('selected');
+                    opt.setAttribute('aria-checked', 'true');
                 } else if (opt.parentElement.id === 'effort-options' && opt.dataset.value === '30m') {
                     opt.classList.add('selected');
+                    opt.setAttribute('aria-checked', 'true');
                 } else if (opt.parentElement.id === 'friction-options' && opt.dataset.value === '1') {
                     opt.classList.add('selected');
+                    opt.setAttribute('aria-checked', 'true');
                 } else {
                     opt.classList.remove('selected');
+                    opt.setAttribute('aria-checked', 'false');
                 }
             });
+            
+            // Initialize focus manager
+            paletteFocusManager.init();
         }
 
         function updateXPPreviews() {
@@ -1950,31 +1744,69 @@
 
         function hidePalette() {
             document.getElementById('palette-modal').classList.add('hidden');
+            
+            // Clean up focus states
+            document.querySelectorAll('.palette-field').forEach(field => {
+                field.classList.remove('focused');
+                field.removeAttribute('aria-current');
+            });
+            document.querySelectorAll('.palette-option').forEach(opt => {
+                opt.classList.remove('keyboard-focus');
+                opt.removeAttribute('aria-selected');
+                opt.tabIndex = -1;
+            });
         }
 
-        function savePaletteTask() {
+        function savePaletteItem() {
+            const modal = document.getElementById('palette-modal');
+            const mode = modal.dataset.mode || 'task';
             const title = document.getElementById('palette-title').textContent;
             const category = document.querySelector('#category-options .selected')?.dataset.value;
-            const priority = document.querySelector('#priority-options .selected')?.dataset.value || '2';
-            const effort = document.querySelector('#effort-options .selected')?.dataset.value || '30m';
-            const friction = document.querySelector('#friction-options .selected')?.dataset.value || '1';
             
-            const newTask = {
-                id: `task_${Date.now()}`,
-                title: title,
-                is_idea: false,
-                is_completed: false,
-                category: category,
-                effort: effort,
-                friction: parseInt(friction),
-                subtasks: []
-            };
-            
-            currentData.today.unshift(newTask);
-            saveTodos();
-            processAndRender();
-            hidePalette();
-            showToast('Captured ✅ — confetti awaits when you tick the box!');
+            if (mode === 'idea') {
+                // Save as idea with minimal data
+                const newIdea = {
+                    id: `idea_${Date.now()}`,
+                    title: title,
+                    is_idea: true,
+                    is_completed: false,
+                    category: category,
+                    effort: null,
+                    friction: null,
+                    due_date: null,
+                    completed_at: null,
+                    subtasks: []
+                };
+                
+                currentData.ideas.unshift(newIdea);
+                saveTodos();
+                renderIdeas();
+                updateCounts();
+                hidePalette();
+                showToast('💡 Idea captured!');
+            } else {
+                // Save as task with full data
+                const priority = document.querySelector('#priority-options .selected')?.dataset.value || '2';
+                const effort = document.querySelector('#effort-options .selected')?.dataset.value || '30m';
+                const friction = document.querySelector('#friction-options .selected')?.dataset.value || '1';
+                
+                const newTask = {
+                    id: `task_${Date.now()}`,
+                    title: title,
+                    is_idea: false,
+                    is_completed: false,
+                    category: category,
+                    effort: effort,
+                    friction: parseInt(friction),
+                    subtasks: []
+                };
+                
+                currentData.today.unshift(newTask);
+                saveTodos();
+                processAndRender();
+                hidePalette();
+                showToast('Captured ✅ — confetti awaits when you tick the box!');
+            }
         }
 
         // Event Listeners
@@ -1982,57 +1814,48 @@
             const paletteOpen = !document.getElementById('palette-modal').classList.contains('hidden');
             
             if (paletteOpen) {
+                const modal = document.getElementById('palette-modal');
+                const mode = modal.dataset.mode || 'task';
+                paletteFocusManager.isNavigating = true;
+                
                 if (e.key === 'Escape') {
                     hidePalette();
                 } else if (e.key === 'Enter') {
-                    savePaletteTask();
-                } else if (e.key >= '1' && e.key <= '5') {
-                    // Find which field we're in based on the last clicked option
-                    let fieldId = null;
-                    const lastSelected = document.activeElement;
-                    if (lastSelected && lastSelected.classList.contains('palette-option')) {
-                        fieldId = lastSelected.parentElement.id;
-                    } else {
-                        // Default to category
-                        fieldId = 'category-options';
-                    }
-                    
-                    const options = document.querySelector(`#${fieldId}`);
-                    if (options) {
-                        let targetIndex = parseInt(e.key) - 1;
-                        
-                        // For category options, adjust index since "Other" has no number
-                        if (fieldId === 'category-options') {
-                            targetIndex = parseInt(e.key); // 1 maps to index 1 (Admin), 2 to index 2 (Selling), etc.
-                        }
-                        
-                        const option = options.children[targetIndex];
-                        if (option) {
-                            options.querySelectorAll('.palette-option').forEach(opt => {
-                                opt.classList.remove('selected');
-                            });
-                            option.classList.add('selected');
-                            
-                            if (fieldId === 'friction-options') {
-                                updateXPPreviews();
-                            }
-                        }
-                    }
-                } else if (e.key === 'Tab') {
+                    savePaletteItem();
+                } else if (e.key === 'Tab' && mode === 'idea') {
+                    // In idea mode, Tab reveals more options
                     e.preventDefault();
-                    // Cycle through fields
-                    const fields = ['category-options', 'priority-options', 'effort-options', 'friction-options'];
-                    let currentField = null;
-                    fields.forEach((field, index) => {
-                        const hasSelected = document.querySelector(`#${field} .selected`);
-                        if (hasSelected && !currentField) {
-                            currentField = index;
-                        }
+                    ['priority-field', 'effort-field', 'friction-field'].forEach(fieldId => {
+                        const field = document.getElementById(fieldId);
+                        if (field) field.classList.remove('hidden');
                     });
-                    
-                    const nextField = fields[(currentField + 1) % fields.length];
-                    document.querySelector(`#${nextField} .palette-option`)?.focus();
+                    // Update the modal to indicate it's now in full mode
+                    document.getElementById('palette-dialog-title').innerHTML = '💡 Idea with details';
+                    modal.querySelector('.keyboard-hints').innerHTML = '<kbd>↑↓</kbd> Navigate fields · <kbd>←→</kbd> Navigate options · <kbd>1-6</kbd> Select · <kbd>Space</kbd> Choose';
+                    updateXPPreviews();
+                } else if (e.key >= '1' && e.key <= '6') {
+                    // Number keys select options in current field
+                    e.preventDefault();
+                    paletteFocusManager.selectByNumber(parseInt(e.key));
+                } else if (e.key === 'Tab') {
+                    // Tab/Shift+Tab navigate between fields
+                    e.preventDefault();
+                    paletteFocusManager.navigateFields(e.shiftKey ? -1 : 1);
+                } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                    // Arrow keys navigate between fields
+                    e.preventDefault();
+                    paletteFocusManager.navigateFields(e.key === 'ArrowDown' ? 1 : -1);
+                } else if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+                    // Left/Right arrows navigate options within field
+                    e.preventDefault();
+                    paletteFocusManager.navigateOptions(e.key === 'ArrowRight' ? 1 : -1);
+                } else if (e.key === ' ') {
+                    // Space selects current option
+                    e.preventDefault();
+                    paletteFocusManager.selectCurrentOption();
                 }
+                
+                paletteFocusManager.isNavigating = false;
                 return;
             }
             
@@ -2042,6 +1865,16 @@
                 // Only focus if not already focused or if target is not an input
                 if (document.activeElement !== input && e.target.tagName !== 'INPUT') {
                     e.preventDefault();
+                    input.focus();
+                }
+            } else if (e.key === 'i' || e.key === 'I') {
+                // Quick idea capture using unified palette
+                if (document.activeElement.tagName !== 'INPUT' && !paletteOpen) {
+                    e.preventDefault();
+                    // Show empty input for idea title
+                    const input = document.getElementById('task-input');
+                    input.placeholder = "What's your idea?";
+                    input.dataset.mode = 'idea';
                     input.focus();
                 }
             }
@@ -2055,18 +1888,27 @@
                 e.stopPropagation(); // Stop event from bubbling up
                 
                 const value = taskInput.value.trim();
+                const mode = taskInput.dataset.mode || 'task';
+                
                 if (!value) {
                     taskInput.classList.add('error');
                     taskInput.placeholder = 'Need a title first.';
                     setTimeout(() => {
                         taskInput.classList.remove('error');
-                        taskInput.placeholder = "What's on your mind? … (press N to add)";
+                        taskInput.placeholder = mode === 'idea' ? "What's your idea?" : "What's on your mind? … (press N to add)";
                     }, 1000);
                     return;
                 }
                 
-                showPalette(value);
+                showPalette(value, mode);
                 taskInput.value = '';
+                taskInput.dataset.mode = 'task'; // Reset to default mode
+                taskInput.placeholder = "What's on your mind? … (press N to add)";
+                taskInput.blur();
+            } else if (e.key === 'Escape') {
+                taskInput.value = '';
+                taskInput.dataset.mode = 'task';
+                taskInput.placeholder = "What's on your mind? … (press N to add)";
                 taskInput.blur();
             }
         });
@@ -2093,11 +1935,27 @@
                 const parent = option.parentElement;
                 parent.querySelectorAll('.palette-option').forEach(opt => {
                     opt.classList.remove('selected');
+                    opt.setAttribute('aria-checked', 'false');
                 });
                 option.classList.add('selected');
+                option.setAttribute('aria-checked', 'true');
                 
                 if (parent.id === 'friction-options') {
                     updateXPPreviews();
+                }
+                
+                // Update focus manager state when clicking
+                const fieldIndex = paletteFocusManager.fields.indexOf(parent.id);
+                if (fieldIndex !== -1) {
+                    paletteFocusManager.currentFieldIndex = fieldIndex;
+                    const options = parent.querySelectorAll('.palette-option');
+                    options.forEach((opt, index) => {
+                        if (opt === option) {
+                            paletteFocusManager.currentOptionIndex = index;
+                        }
+                    });
+                    paletteFocusManager.updateFieldFocus();
+                    paletteFocusManager.updateOptionFocus();
                 }
             });
         });
@@ -2105,7 +1963,7 @@
         // Modal overlay handling
         document.getElementById('modal-overlay').addEventListener('click', hidePalette);
         document.getElementById('palette-cancel').addEventListener('click', hidePalette);
-        document.getElementById('palette-save').addEventListener('click', savePaletteTask);
+        document.getElementById('palette-save').addEventListener('click', savePaletteItem);
         
         // Show more button
         document.getElementById('show-more-btn').addEventListener('click', () => {
@@ -2115,8 +1973,66 @@
 
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
+            // Initialize UI elements
+            updateNorthStarSection();
+            updateWorkingZone();
+            
             initWebSocket();
             loadTodos();
+            
+            // Restore ideas section collapsed state
+            const isCollapsed = localStorage.getItem('ideas-collapsed') === 'true';
+            if (isCollapsed) {
+                document.getElementById('ideas-section').classList.add('collapsed');
+            }
+            
+            // Setup morphing search functionality
+            const searchMorphing = document.getElementById('search-morphing');
+            const searchIcon = document.getElementById('search-icon-morph');
+            const searchInput = document.getElementById('search-input');
+            const searchClear = document.getElementById('search-clear');
+            
+            // Expand search on icon click
+            searchIcon.addEventListener('click', () => {
+                searchMorphing.classList.add('active');
+                searchInput.focus();
+            });
+            
+            // Handle search input
+            searchInput.addEventListener('input', (e) => {
+                searchTerm = e.target.value;
+                renderTasks();
+            });
+            
+            // Clear search and collapse
+            searchClear.addEventListener('click', () => {
+                searchTerm = '';
+                searchInput.value = '';
+                searchMorphing.classList.remove('active');
+                renderTasks();
+            });
+            
+            // Hide search on escape
+            searchInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    searchTerm = '';
+                    searchInput.value = '';
+                    searchMorphing.classList.remove('active');
+                    renderTasks();
+                }
+            });
+            
+            // Collapse on click outside
+            document.addEventListener('click', (e) => {
+                if (!searchMorphing.contains(e.target) && searchMorphing.classList.contains('active') && !searchInput.value) {
+                    searchMorphing.classList.remove('active');
+                }
+            });
+            
+            // Prevent input click from bubbling
+            searchInput.addEventListener('click', (e) => {
+                e.stopPropagation();
+            });
         });
         
         // Setup drag and drop on the task list
@@ -2128,5 +2044,6 @@
             }
         }, 100);
     </script>
+
 </body>
 </html>
