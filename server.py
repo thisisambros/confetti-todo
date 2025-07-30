@@ -25,7 +25,10 @@ app.add_middleware(
 # Mount static files
 app.mount("/assets", StaticFiles(directory="assets"), name="assets")
 
-TODO_FILE = Path("todos.md")
+# Check if running in test mode via query parameter or environment variable
+import os
+TEST_MODE = os.environ.get("TEST_MODE", "false").lower() == "true"
+TODO_FILE = Path("todos.test.md") if TEST_MODE else Path("todos.md")
 BACKUP_DIR = Path("backups")
 
 class Task(BaseModel):
@@ -206,8 +209,16 @@ def save_markdown(sections: Dict[str, List[Dict]]):
     TODO_FILE.write_text("\n".join(lines))
 
 @app.get("/")
-async def root():
+async def root(test: bool = False):
+    global TEST_MODE, TODO_FILE
+    if test:
+        TEST_MODE = True
+        TODO_FILE = Path("todos.test.md")
     return FileResponse("index.html")
+
+@app.get("/api/test-mode")
+async def get_test_mode():
+    return {"test_mode": TEST_MODE, "data_file": str(TODO_FILE)}
 
 @app.get("/api/todos")
 async def get_todos():

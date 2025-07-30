@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Confetti Todo</title>
     <link rel="stylesheet" href="assets/css/main.css">
 </head>
@@ -43,18 +44,44 @@
 
             <!-- Controls -->
             <div class="controls">
-                <div class="filter-buttons">
-                    <button class="filter-btn active" data-filter="all">All Tasks</button>
-                    <button class="filter-btn" data-filter="today">Today</button>
-                    <button class="filter-btn" data-filter="week">This Week</button>
-                    <button class="filter-btn" data-filter="overdue">Overdue</button>
+                <!-- Date Filter Tabs -->
+                <div class="date-filter-tabs">
+                    <button class="date-tab active" data-filter="all">
+                        <span class="tab-label">All</span>
+                        <span class="tab-count" id="count-all">0</span>
+                    </button>
+                    <button class="date-tab" data-filter="today">
+                        <span class="tab-label">Today</span>
+                        <span class="tab-count" id="count-today">0</span>
+                    </button>
+                    <button class="date-tab" data-filter="week">
+                        <span class="tab-label">This Week</span>
+                        <span class="tab-count" id="count-week">0</span>
+                    </button>
+                    <button class="date-tab" data-filter="overdue">
+                        <span class="tab-label">Overdue</span>
+                        <span class="tab-count" id="count-overdue">0</span>
+                    </button>
                 </div>
-                <select class="sort-select" id="sort-select">
-                    <option value="due">Sort by Due Date</option>
-                    <option value="xp">Sort by XP</option>
-                    <option value="effort">Sort by Effort</option>
-                    <option value="category">Sort by Category</option>
-                </select>
+                
+                <!-- Category Filters and Sort -->
+                <div class="filter-row-secondary">
+                    <div class="category-filters">
+                        <div class="category-chips" id="category-chips">
+                            <!-- Active category chips will be inserted here -->
+                        </div>
+                        <button class="add-category-filter" id="add-category-filter" title="Filter by category">
+                            <span class="plus-icon">+</span> Category
+                        </button>
+                    </div>
+                    
+                    <select class="sort-select" id="sort-select">
+                        <option value="due">Sort: Due Date</option>
+                        <option value="xp">Sort: XP Value</option>
+                        <option value="effort">Sort: Effort</option>
+                        <option value="category">Sort: Category</option>
+                    </select>
+                </div>
             </div>
 
             <!-- Tasks -->
@@ -142,6 +169,20 @@
                 <div class="palette-label">Title: <span id="palette-title"></span></div>
             </div>
             
+            <div class="palette-field" id="due-date-field" role="group" aria-labelledby="due-date-label">
+                <div class="palette-label" id="due-date-label">Due Date (default ☑ Today)</div>
+                <div class="palette-options" id="due-date-options" role="radiogroup" aria-labelledby="due-date-label">
+                    <div class="palette-option selected" data-value="today" role="radio" aria-checked="true"><kbd>1</kbd> Today <span class="date-hint"></span></div>
+                    <div class="palette-option" data-value="tomorrow" role="radio" aria-checked="false"><kbd>2</kbd> Tomorrow <span class="date-hint"></span></div>
+                    <div class="palette-option" data-value="this-week" role="radio" aria-checked="false"><kbd>3</kbd> This Week <span class="date-hint"></span></div>
+                    <div class="palette-option" data-value="no-date" role="radio" aria-checked="false"><kbd>4</kbd> No Due Date</div>
+                    <div class="palette-option" data-value="pick-date" role="radio" aria-checked="false"><kbd>5</kbd> Pick Date...</div>
+                </div>
+                <div class="date-picker-container hidden" id="date-picker-container">
+                    <input type="date" id="custom-date-picker" class="date-picker-input" />
+                </div>
+            </div>
+            
             <div class="palette-field" id="category-field" role="group" aria-labelledby="category-label">
                 <div class="palette-label" id="category-label">Category (default ☑ Other)</div>
                 <div class="palette-options" id="category-options" role="radiogroup" aria-labelledby="category-label">
@@ -203,6 +244,58 @@
 
     <!-- Confetti Container -->
     <div class="confetti-container" id="confetti-container"></div>
+    
+    <!-- Mobile Bottom Navigation -->
+    <nav class="mobile-bottom-nav" id="mobile-bottom-nav">
+        <button class="nav-item active" data-filter="all">
+            <span class="nav-icon">📋</span>
+            <span class="nav-label">All</span>
+            <span class="nav-badge" id="mobile-count-all">0</span>
+        </button>
+        <button class="nav-item" data-filter="today">
+            <span class="nav-icon">📅</span>
+            <span class="nav-label">Today</span>
+            <span class="nav-badge" id="mobile-count-today">0</span>
+        </button>
+        <button class="nav-item" id="mobile-add-task">
+            <span class="nav-icon nav-icon-add">+</span>
+        </button>
+        <button class="nav-item" data-filter="week">
+            <span class="nav-icon">📆</span>
+            <span class="nav-label">Week</span>
+            <span class="nav-badge" id="mobile-count-week">0</span>
+        </button>
+        <button class="nav-item" id="mobile-more-menu">
+            <span class="nav-icon">☰</span>
+            <span class="nav-label">More</span>
+        </button>
+    </nav>
+    
+    <!-- Mobile Filter Sheet -->
+    <div class="mobile-filter-sheet" id="mobile-filter-sheet">
+        <div class="sheet-handle"></div>
+        <div class="sheet-content">
+            <h3>Filters & Sort</h3>
+            <div class="mobile-filter-options">
+                <div class="mobile-category-section">
+                    <h4>Categories</h4>
+                    <div class="mobile-category-list" id="mobile-category-list">
+                        <!-- Category checkboxes will be inserted here -->
+                    </div>
+                </div>
+                <div class="mobile-sort-section">
+                    <h4>Sort By</h4>
+                    <select class="mobile-sort-select" id="mobile-sort-select">
+                        <option value="due">Due Date</option>
+                        <option value="xp">XP Value</option>
+                        <option value="effort">Effort</option>
+                        <option value="category">Category</option>
+                    </select>
+                </div>
+            </div>
+            <button class="sheet-close" id="sheet-close">Done</button>
+        </div>
+    </div>
 
     <!-- Main application script -->
     <script>
@@ -214,6 +307,7 @@
         let currentFilter = 'all';
         let currentSort = 'due';
         let audioContext = null;
+        let activeCategories = new Set();
         let workingTask = null;
         let workingStartTime = null;
         let workingTimer = null;
@@ -222,6 +316,23 @@
         let expandedTasks = new Set(); // Track which tasks are expanded
         let northStarTask = null; // Today's North Star task
         let searchTerm = ''; // Current search term
+        
+        // Utility function to escape HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        // Format date in European format (DD/MM/YYYY)
+        function formatDateEuropean(dateString) {
+            if (!dateString) return '';
+            const date = new Date(dateString);
+            const day = date.getDate().toString().padStart(2, '0');
+            const month = (date.getMonth() + 1).toString().padStart(2, '0');
+            const year = date.getFullYear();
+            return `${day}/${month}/${year}`;
+        }
 
         // Focus management for palette
         class PaletteFocusManager {
@@ -244,7 +355,7 @@
                         this.fields = ['category-options', 'priority-options', 'effort-options', 'friction-options'];
                     }
                 } else {
-                    this.fields = ['category-options', 'priority-options', 'effort-options', 'friction-options'];
+                    this.fields = ['due-date-options', 'category-options', 'priority-options', 'effort-options', 'friction-options'];
                 }
                 
                 this.currentFieldIndex = 0;
@@ -294,6 +405,23 @@
                 if (options[this.currentOptionIndex]) {
                     options[this.currentOptionIndex].classList.add('selected');
                     options[this.currentOptionIndex].setAttribute('aria-checked', 'true');
+                    
+                    // Handle date picker visibility
+                    if (this.fields[this.currentFieldIndex] === 'due-date-options') {
+                        const selectedValue = options[this.currentOptionIndex].dataset.value;
+                        const datePickerContainer = document.getElementById('date-picker-container');
+                        const datePicker = document.getElementById('custom-date-picker');
+                        
+                        if (selectedValue === 'pick-date') {
+                            datePickerContainer.classList.remove('hidden');
+                            // Set default to today if not set
+                            if (!datePicker.value) {
+                                datePicker.value = new Date().toISOString().split('T')[0];
+                            }
+                        } else {
+                            datePickerContainer.classList.add('hidden');
+                        }
+                    }
                     
                     // Update XP previews if friction field
                     if (this.fields[this.currentFieldIndex] === 'friction-options') {
@@ -479,7 +607,8 @@
             const weekEnd = new Date(weekStart);
             weekEnd.setDate(weekStart.getDate() + 7);
             
-            return tasks.filter(task => {
+            // First apply date filter
+            let filtered = tasks.filter(task => {
                 if (currentFilter === 'all') return true;
                 
                 if (!task.due_date) return false;
@@ -498,6 +627,63 @@
                         return true;
                 }
             });
+            
+            // Then apply category filter if any
+            if (activeCategories.size > 0) {
+                filtered = filtered.filter(task => 
+                    activeCategories.has(task.category)
+                );
+            }
+            
+            return filtered;
+        }
+        
+        // Update task counts for date tabs
+        function updateFilterCounts() {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            const weekStart = new Date(today);
+            weekStart.setDate(today.getDate() - today.getDay());
+            
+            const weekEnd = new Date(weekStart);
+            weekEnd.setDate(weekStart.getDate() + 7);
+            
+            const counts = {
+                all: 0,
+                today: 0,
+                week: 0,
+                overdue: 0
+            };
+            
+            allTasks.forEach(task => {
+                if (!task.is_completed) {
+                    counts.all++;
+                    
+                    if (task.due_date) {
+                        const dueDate = new Date(task.due_date);
+                        dueDate.setHours(0, 0, 0, 0);
+                        
+                        if (dueDate.getTime() === today.getTime()) {
+                            counts.today++;
+                        }
+                        
+                        if (dueDate >= weekStart && dueDate < weekEnd) {
+                            counts.week++;
+                        }
+                        
+                        if (dueDate < today) {
+                            counts.overdue++;
+                        }
+                    }
+                }
+            });
+            
+            // Update UI
+            document.getElementById('count-all').textContent = counts.all;
+            document.getElementById('count-today').textContent = counts.today;
+            document.getElementById('count-week').textContent = counts.week;
+            document.getElementById('count-overdue').textContent = counts.overdue;
         }
 
         // Sort tasks
@@ -572,6 +758,9 @@
             const container = document.getElementById('task-list');
             container.innerHTML = '';
             
+            // Update filter counts
+            updateFilterCounts();
+            
             let tasksToDisplay = [];
             
             if (searchTerm) {
@@ -589,9 +778,52 @@
             }
             
             if (tasksToDisplay.length === 0) {
-                document.getElementById('empty-state').classList.remove('hidden');
+                const emptyState = document.getElementById('empty-state');
+                emptyState.classList.remove('hidden');
                 document.getElementById('show-more-btn').classList.add('hidden');
-                document.getElementById('task-display-info').textContent = searchTerm ? 'No matching tasks found' : '';
+                
+                // Customize empty state based on filters
+                if (searchTerm) {
+                    emptyState.innerHTML = `
+                        <div class="empty-filter-state">
+                            <div class="empty-icon">🔍</div>
+                            <div class="empty-message">No tasks match "${escapeHtml(searchTerm)}"</div>
+                            <div class="empty-hint">Try a different search term</div>
+                        </div>
+                    `;
+                } else if (activeCategories.size > 0) {
+                    const categoryList = Array.from(activeCategories).map(c => '@' + c).join(', ');
+                    emptyState.innerHTML = `
+                        <div class="empty-filter-state">
+                            <div class="empty-icon">📂</div>
+                            <div class="empty-message">No tasks in ${categoryList}</div>
+                            <div class="empty-hint">Remove category filters or add tasks to these categories</div>
+                        </div>
+                    `;
+                } else if (currentFilter !== 'all') {
+                    const filterMessages = {
+                        today: 'No tasks due today',
+                        week: 'No tasks due this week',
+                        overdue: 'No overdue tasks'
+                    };
+                    const filterHints = {
+                        today: 'Check "This Week" or add tasks with today\'s due date',
+                        week: 'Your week is clear! Time to plan ahead',
+                        overdue: 'Great job! All tasks are on schedule'
+                    };
+                    emptyState.innerHTML = `
+                        <div class="empty-filter-state">
+                            <div class="empty-icon">${currentFilter === 'overdue' ? '✨' : '📅'}</div>
+                            <div class="empty-message">${filterMessages[currentFilter]}</div>
+                            <div class="empty-hint">${filterHints[currentFilter]}</div>
+                        </div>
+                    `;
+                } else {
+                    // Default empty state
+                    emptyState.innerHTML = '<div class="empty-state-text">No active tasks. Press <kbd>N</kbd> to add a task or <kbd>I</kbd> to capture an idea.</div>';
+                }
+                
+                document.getElementById('task-display-info').textContent = '';
             } else {
                 document.getElementById('empty-state').classList.add('hidden');
                 
@@ -636,12 +868,14 @@
         }
 
         function createTaskElement(task, isSubtask = false) {
+            const isMobile = window.innerWidth <= 768;
+            
             const li = document.createElement('li');
             li.className = `task-item ${isSubtask ? 'subtask' : ''} ${task.is_completed ? 'completed' : ''}`;
             li.dataset.taskId = task.id;
             
-            // Enable drag & drop for non-subtasks
-            if (!isSubtask && !task.is_completed) {
+            // Enable drag & drop for non-subtasks on desktop
+            if (!isMobile && !isSubtask && !task.is_completed) {
                 li.draggable = true;
                 li.addEventListener('dragstart', handleDragStart);
                 li.addEventListener('dragend', handleDragEnd);
@@ -705,19 +939,19 @@
                 meta.appendChild(category);
             }
             
-            if (task.effort) {
-                const effort = document.createElement('span');
-                effort.className = 'task-effort';
-                effort.textContent = task.effort;
-                meta.appendChild(effort);
-            }
-            
             if (task.friction) {
                 const friction = document.createElement('span');
                 friction.className = 'task-friction';
                 const frictionIcons = ['', '🍃', '💨', '🌪️'];
                 friction.textContent = frictionIcons[task.friction] || '🍃';
                 meta.appendChild(friction);
+            }
+            
+            if (task.effort) {
+                const effort = document.createElement('span');
+                effort.className = 'task-effort';
+                effort.textContent = task.effort;
+                meta.appendChild(effort);
             }
             
             if (task.due_date) {
@@ -728,27 +962,80 @@
                 today.setHours(0, 0, 0, 0);
                 
                 if (dueDate < today && !task.is_completed) {
-                    due.style.color = 'var(--color-error)';
+                    due.style.color = 'var(--color-danger)'; // Use dark red for better contrast
+                    due.style.fontWeight = '500'; // Make it slightly bolder
                 } else if (dueDate.toDateString() === today.toDateString()) {
                     due.style.color = 'var(--color-warning)';
                 }
                 
-                due.textContent = `📅 ${dueDate.toLocaleDateString()}`;
+                due.textContent = `📅 ${formatDateEuropean(task.due_date)}`;
                 meta.appendChild(due);
             }
             
             if (task.subtasks && task.subtasks.length > 0) {
-                const progress = document.createElement('div');
-                progress.className = 'task-progress';
-                const fill = document.createElement('div');
-                fill.className = 'task-progress-fill';
+                // Create stacked checkbox progress visualization
+                const progressContainer = document.createElement('div');
+                progressContainer.className = 'task-progress-checkboxes';
+                
+                // Add has-more class for mobile if more than 3 subtasks
+                if (task.subtasks.length > 3) {
+                    progressContainer.classList.add('has-more');
+                }
+                
                 const completed = task.subtasks.filter(st => st.is_completed).length;
                 const total = task.subtasks.length;
-                fill.style.width = `${(completed / total) * 100}%`;
-                progress.appendChild(fill);
-                meta.appendChild(progress);
                 
+                // Create mini checkboxes for each subtask
+                task.subtasks.forEach((subtask, index) => {
+                    const miniCheckbox = document.createElement('div');
+                    miniCheckbox.className = 'mini-checkbox';
+                    if (subtask.is_completed) {
+                        miniCheckbox.classList.add('completed');
+                    }
+                    
+                    // Add individual tooltip on hover
+                    miniCheckbox.setAttribute('title', subtask.title);
+                    
+                    // Make mini checkboxes clickable to toggle subtask
+                    miniCheckbox.style.cursor = 'pointer';
+                    miniCheckbox.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        toggleTask(subtask);
+                    });
+                    
+                    progressContainer.appendChild(miniCheckbox);
+                });
+                
+                // Add hover tooltip with subtask details
+                progressContainer.addEventListener('mouseenter', (e) => {
+                    const tooltip = document.createElement('div');
+                    tooltip.className = 'subtask-tooltip';
+                    tooltip.innerHTML = task.subtasks.map((st, idx) => 
+                        `<div class="${st.is_completed ? 'completed' : ''}">${st.is_completed ? '✓' : '○'} ${escapeHtml(st.title)}</div>`
+                    ).join('');
+                    
+                    document.body.appendChild(tooltip);
+                    
+                    const rect = progressContainer.getBoundingClientRect();
+                    tooltip.style.position = 'absolute';
+                    tooltip.style.left = rect.left + 'px';
+                    tooltip.style.top = (rect.top - tooltip.offsetHeight - 5) + 'px';
+                    
+                    progressContainer._tooltip = tooltip;
+                });
+                
+                progressContainer.addEventListener('mouseleave', (e) => {
+                    if (progressContainer._tooltip) {
+                        progressContainer._tooltip.remove();
+                        delete progressContainer._tooltip;
+                    }
+                });
+                
+                meta.appendChild(progressContainer);
+                
+                // Add progress counter
                 const progressText = document.createElement('span');
+                progressText.className = 'task-progress-counter';
                 progressText.textContent = `${completed}/${total}`;
                 meta.appendChild(progressText);
             }
@@ -768,7 +1055,6 @@
                 const completed = task.subtasks.filter(st => st.is_completed).length;
                 if (completed === task.subtasks.length && completed > 0) {
                     xp.textContent = `+${Math.round(xpValue * 1.5)} XP ✨`;
-                    xp.style.background = 'var(--color-success)';
                 }
             }
             
@@ -823,6 +1109,36 @@
             
             li.appendChild(checkbox);
             li.appendChild(content);
+            
+            // Add quick action buttons for mobile
+            if (isMobile && !task.is_completed && !isSubtask) {
+                const quickActions = document.createElement('div');
+                quickActions.className = 'task-quick-actions';
+                
+                const workBtn = document.createElement('button');
+                workBtn.className = 'task-quick-action work';
+                workBtn.innerHTML = '▶';
+                workBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    if (workingTask && workingTask.id !== task.id) {
+                        showSwitchModal(task);
+                    } else {
+                        startWorkingOn(task);
+                    }
+                };
+                
+                const completeBtn = document.createElement('button');
+                completeBtn.className = 'task-quick-action complete';
+                completeBtn.innerHTML = '✓';
+                completeBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    toggleTask(task);
+                };
+                
+                quickActions.appendChild(workBtn);
+                quickActions.appendChild(completeBtn);
+                li.appendChild(quickActions);
+            }
             
             return li;
         }
@@ -921,6 +1237,11 @@
         }
         
         function stopWorking() {
+            console.log('stopWorking called', { 
+                workingTask: workingTask?.title, 
+                workingTimer: !!workingTimer 
+            });
+            
             if (workingTimer) {
                 clearInterval(workingTimer);
                 workingTimer = null;
@@ -962,7 +1283,7 @@
                         <div class="working-timer">
                             ${minutes}:${seconds.toString().padStart(2, '0')}
                         </div>
-                        <button class="stop-working-btn" onclick="stopWorking()">Stop</button>
+                        <button class="stop-working-btn" onclick="event.stopPropagation(); stopWorking(); return false;">Stop</button>
                     </div>
                     <div class="working-progress">
                         <div class="working-progress-fill" style="width: ${progressPercent}%"></div>
@@ -1077,11 +1398,12 @@
             
             if (!northStarTask) {
                 // Show empty state
+                const isMobile = window.innerWidth <= 768;
                 section.innerHTML = `
-                    <div class="north-star-empty-state">
+                    <div class="north-star-empty-state" ${isMobile ? 'onclick="showNorthStarPicker()"' : ''}>
                         <div class="north-star-icon">⭐</div>
                         <div class="north-star-empty-content">
-                            <div class="north-star-empty-title">What's your main focus today?</div>
+                            <div class="north-star-empty-title">${isMobile ? 'Choose your main focus today' : 'What\'s your main focus today?'}</div>
                             <button class="choose-north-star-btn" onclick="showNorthStarPicker()">
                                 Choose from your tasks ▼
                                 <span class="xp-reward">+25 XP</span>
@@ -1193,42 +1515,71 @@
         }
         
         function showSwitchModal(newTask) {
+            if (!workingTask) return;
+            
             const overlay = document.createElement('div');
             overlay.className = 'modal-overlay';
+            overlay.onclick = cancelSwitch; // Allow clicking overlay to cancel
             
             const modal = document.createElement('div');
             modal.className = 'switch-modal';
+            modal.setAttribute('role', 'dialog');
+            modal.setAttribute('aria-labelledby', 'switch-modal-title');
+            modal.setAttribute('aria-describedby', 'switch-modal-description');
             
-            let countdown = 3;
             modal.innerHTML = `
-                <h3>Are you sure you want to switch tasks?</h3>
-                <p>You're currently working on "${workingTask.title}"</p>
-                <div class="countdown">${countdown}</div>
+                <h3 id="switch-modal-title">Switch Task Confirmation</h3>
+                <p id="switch-modal-description">Currently working on: <span class="current-task-name">${escapeHtml(workingTask.title)}</span></p>
+                <p>Switch to: <span class="new-task-name">${escapeHtml(newTask.title)}</span>?</p>
                 <div class="switch-modal-buttons">
-                    <button onclick="confirmSwitch('${newTask.id}')">Yes, switch</button>
-                    <button class="confirm" onclick="cancelSwitch()">Keep working</button>
+                    <button class="keep-working" onclick="cancelSwitch()" aria-label="Continue working on current task">
+                        <span aria-hidden="true">→</span> Keep Working
+                    </button>
+                    <button class="switch-task" onclick="confirmSwitch('${newTask.id}')" aria-label="Switch to new task">
+                        <span aria-hidden="true">⚡</span> Switch Task
+                    </button>
                 </div>
             `;
             
             document.body.appendChild(overlay);
             document.body.appendChild(modal);
             
-            const countdownInterval = setInterval(() => {
-                countdown--;
-                modal.querySelector('.countdown').textContent = countdown;
-                if (countdown <= 0) {
-                    clearInterval(countdownInterval);
-                    cancelSwitch();
-                }
-            }, 1000);
+            // Focus management
+            const keepWorkingBtn = modal.querySelector('.keep-working');
+            keepWorkingBtn.focus();
             
-            window.currentCountdown = countdownInterval;
+            // Trap focus within modal
+            const focusableElements = modal.querySelectorAll('button');
+            const firstFocusable = focusableElements[0];
+            const lastFocusable = focusableElements[focusableElements.length - 1];
+            
+            modal.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    cancelSwitch();
+                } else if (e.key === 'Tab') {
+                    if (e.shiftKey) {
+                        if (document.activeElement === firstFocusable) {
+                            e.preventDefault();
+                            lastFocusable.focus();
+                        }
+                    } else {
+                        if (document.activeElement === lastFocusable) {
+                            e.preventDefault();
+                            firstFocusable.focus();
+                        }
+                    }
+                }
+            });
         }
         
         window.confirmSwitch = (taskId) => {
-            if (window.currentCountdown) clearInterval(window.currentCountdown);
-            document.querySelector('.modal-overlay').remove();
-            document.querySelector('.switch-modal').remove();
+            // Remove all modal overlays that are not part of the palette modal
+            document.querySelectorAll('.modal-overlay').forEach(overlay => {
+                if (overlay.id !== 'modal-overlay') {
+                    overlay.remove();
+                }
+            });
+            document.querySelector('.switch-modal')?.remove();
             
             const task = allTasks.find(t => t.id === taskId);
             if (task) {
@@ -1238,8 +1589,12 @@
         };
         
         window.cancelSwitch = () => {
-            if (window.currentCountdown) clearInterval(window.currentCountdown);
-            document.querySelector('.modal-overlay')?.remove();
+            // Remove all modal overlays that are not part of the palette modal
+            document.querySelectorAll('.modal-overlay').forEach(overlay => {
+                if (overlay.id !== 'modal-overlay') {
+                    overlay.remove();
+                }
+            });
             document.querySelector('.switch-modal')?.remove();
         };
         
@@ -1381,6 +1736,9 @@
             
             // Update in data structure
             updateTaskInData(parentTask);
+            
+            // Ensure the parent task stays expanded to show the new subtask
+            expandedTasks.add(parentTask.id);
             
             // Save and refresh
             await saveTodos();
@@ -1678,7 +2036,7 @@
                 keyboardHints.innerHTML = '<kbd>Enter</kbd> Save · <kbd>Tab</kbd> More options · <kbd>Esc</kbd> Cancel';
                 
                 // Hide non-essential fields for ideas
-                ['priority-field', 'effort-field', 'friction-field'].forEach(fieldId => {
+                ['due-date-field', 'priority-field', 'effort-field', 'friction-field'].forEach(fieldId => {
                     const field = document.getElementById(fieldId);
                     if (field) field.classList.add('hidden');
                 });
@@ -1690,7 +2048,7 @@
                 keyboardHints.innerHTML = '<kbd>↑↓</kbd> Navigate fields · <kbd>←→</kbd> Navigate options · <kbd>1-6</kbd> Select · <kbd>Space</kbd> Choose';
                 
                 // Show all fields for tasks
-                ['priority-field', 'effort-field', 'friction-field'].forEach(fieldId => {
+                ['due-date-field', 'priority-field', 'effort-field', 'friction-field'].forEach(fieldId => {
                     const field = document.getElementById(fieldId);
                     if (field) field.classList.remove('hidden');
                 });
@@ -1718,6 +2076,36 @@
                     opt.setAttribute('aria-checked', 'false');
                 }
             });
+            
+            // Ensure date field has Today selected by default (only if nothing selected)
+            const dueDateSelected = document.querySelector('#due-date-options .selected');
+            if (!dueDateSelected) {
+                const todayOption = document.querySelector('#due-date-options .palette-option[data-value="today"]');
+                if (todayOption) {
+                    todayOption.classList.add('selected');
+                    todayOption.setAttribute('aria-checked', 'true');
+                }
+            }
+            
+            // Update date hints with European format
+            const updateDateHints = () => {
+                const today = new Date();
+                const tomorrow = new Date();
+                tomorrow.setDate(tomorrow.getDate() + 1);
+                const endOfWeek = new Date();
+                const daysUntilSunday = 7 - endOfWeek.getDay();
+                endOfWeek.setDate(endOfWeek.getDate() + daysUntilSunday);
+                
+                const todayHint = document.querySelector('[data-value="today"] .date-hint');
+                const tomorrowHint = document.querySelector('[data-value="tomorrow"] .date-hint');
+                const weekHint = document.querySelector('[data-value="this-week"] .date-hint');
+                
+                if (todayHint) todayHint.textContent = `(${formatDateEuropean(today.toISOString())})`;
+                if (tomorrowHint) tomorrowHint.textContent = `(${formatDateEuropean(tomorrow.toISOString())})`;
+                if (weekHint) weekHint.textContent = `(${formatDateEuropean(endOfWeek.toISOString())})`;
+            };
+            
+            updateDateHints();
             
             // Initialize focus manager
             paletteFocusManager.init();
@@ -1790,6 +2178,28 @@
                 const effort = document.querySelector('#effort-options .selected')?.dataset.value || '30m';
                 const friction = document.querySelector('#friction-options .selected')?.dataset.value || '1';
                 
+                // Calculate due date based on selection
+                const dueDateValue = document.querySelector('#due-date-options .selected')?.dataset.value || 'today';
+                let dueDate = null;
+                
+                if (dueDateValue === 'today') {
+                    dueDate = new Date().toISOString().split('T')[0];
+                } else if (dueDateValue === 'tomorrow') {
+                    const tomorrow = new Date();
+                    tomorrow.setDate(tomorrow.getDate() + 1);
+                    dueDate = tomorrow.toISOString().split('T')[0];
+                } else if (dueDateValue === 'this-week') {
+                    const endOfWeek = new Date();
+                    const daysUntilSunday = 7 - endOfWeek.getDay();
+                    endOfWeek.setDate(endOfWeek.getDate() + daysUntilSunday);
+                    dueDate = endOfWeek.toISOString().split('T')[0];
+                } else if (dueDateValue === 'pick-date') {
+                    const customDate = document.getElementById('custom-date-picker').value;
+                    dueDate = customDate || null;
+                } else if (dueDateValue === 'no-date') {
+                    dueDate = null;
+                }
+                
                 const newTask = {
                     id: `task_${Date.now()}`,
                     title: title,
@@ -1798,6 +2208,8 @@
                     category: category,
                     effort: effort,
                     friction: parseInt(friction),
+                    due_date: dueDate,
+                    completed_at: null,
                     subtasks: []
                 };
                 
@@ -1825,7 +2237,7 @@
                 } else if (e.key === 'Tab' && mode === 'idea') {
                     // In idea mode, Tab reveals more options
                     e.preventDefault();
-                    ['priority-field', 'effort-field', 'friction-field'].forEach(fieldId => {
+                    ['due-date-field', 'priority-field', 'effort-field', 'friction-field'].forEach(fieldId => {
                         const field = document.getElementById(fieldId);
                         if (field) field.classList.remove('hidden');
                     });
@@ -1913,15 +2325,98 @@
             }
         });
 
-        // Filter buttons
-        document.querySelectorAll('.filter-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                currentFilter = btn.dataset.filter;
+        // New date filter tabs
+        document.querySelectorAll('.date-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.date-tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                currentFilter = tab.dataset.filter;
                 renderTasks();
             });
         });
+        
+        // Category filter system
+        
+        // Add category filter button
+        const addCategoryBtn = document.getElementById('add-category-filter');
+        const categoryChips = document.getElementById('category-chips');
+        
+        addCategoryBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            showCategorySelector(e.target);
+        });
+        
+        function showCategorySelector(anchor) {
+            // Remove any existing popup
+            const existing = document.querySelector('.category-selector-popup');
+            if (existing) existing.remove();
+            
+            const popup = document.createElement('div');
+            popup.className = 'category-selector-popup';
+            
+            const categories = ['admin', 'selling', 'research', 'product', 'hiring', 'other'];
+            categories.forEach(cat => {
+                if (!activeCategories.has(cat)) {
+                    const option = document.createElement('button');
+                    option.className = 'category-option';
+                    option.textContent = '@' + cat;
+                    option.addEventListener('click', () => {
+                        addCategoryFilter(cat);
+                        popup.remove();
+                    });
+                    popup.appendChild(option);
+                }
+            });
+            
+            // Position relative to button
+            const rect = anchor.getBoundingClientRect();
+            popup.style.position = 'fixed';
+            popup.style.left = rect.left + 'px';
+            popup.style.top = rect.bottom + 'px';
+            
+            document.body.appendChild(popup);
+            
+            // Close on outside click
+            setTimeout(() => {
+                document.addEventListener('click', function closePopup(e) {
+                    if (!popup.contains(e.target)) {
+                        popup.remove();
+                        document.removeEventListener('click', closePopup);
+                    }
+                });
+            }, 0);
+        }
+        
+        function addCategoryFilter(category) {
+            activeCategories.add(category);
+            
+            const chip = document.createElement('div');
+            chip.className = 'category-chip';
+            chip.innerHTML = `
+                <span class="chip-label">@${category}</span>
+                <button class="remove-chip" title="Remove filter">×</button>
+            `;
+            
+            chip.querySelector('.remove-chip').addEventListener('click', () => {
+                activeCategories.delete(category);
+                chip.remove();
+                renderTasks();
+                
+                // Show add button if no filters
+                if (activeCategories.size === 0) {
+                    addCategoryBtn.style.display = 'inline-flex';
+                }
+            });
+            
+            categoryChips.appendChild(chip);
+            
+            // Hide add button if we have max categories
+            if (activeCategories.size >= 6) {
+                addCategoryBtn.style.display = 'none';
+            }
+            
+            renderTasks();
+        }
 
         // Sort select
         document.getElementById('sort-select').addEventListener('change', (e) => {
@@ -2043,6 +2538,207 @@
                 taskList.addEventListener('drop', handleDrop);
             }
         }, 100);
+        
+        // Mobile-specific functionality
+        function initializeMobile() {
+            if (window.innerWidth > 768) return;
+            
+            // Mobile bottom navigation
+            const mobileNavItems = document.querySelectorAll('.mobile-bottom-nav .nav-item[data-filter]');
+            mobileNavItems.forEach(item => {
+                item.addEventListener('click', () => {
+                    // Update active state
+                    mobileNavItems.forEach(nav => nav.classList.remove('active'));
+                    item.classList.add('active');
+                    
+                    // Update filter
+                    currentFilter = item.dataset.filter;
+                    
+                    // Sync with desktop tabs if they exist
+                    const desktopTab = document.querySelector(`.date-tab[data-filter="${currentFilter}"]`);
+                    if (desktopTab) {
+                        document.querySelectorAll('.date-tab').forEach(t => t.classList.remove('active'));
+                        desktopTab.classList.add('active');
+                    }
+                    
+                    renderTasks();
+                });
+            });
+            
+            // Add task button
+            const mobileAddBtn = document.getElementById('mobile-add-task');
+            mobileAddBtn.addEventListener('click', () => {
+                // Create mobile task input
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.className = 'mobile-task-input';
+                input.placeholder = 'What needs to be done?';
+                input.style.cssText = `
+                    position: fixed;
+                    bottom: 70px;
+                    left: 10px;
+                    right: 10px;
+                    padding: 1rem;
+                    font-size: 16px;
+                    border: 2px solid var(--color-primary);
+                    border-radius: 8px;
+                    background: white;
+                    z-index: 1001;
+                    box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+                `;
+                
+                document.body.appendChild(input);
+                input.focus();
+                
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' && input.value.trim()) {
+                        showPalette(input.value.trim(), 'task');
+                        input.remove();
+                    } else if (e.key === 'Escape') {
+                        input.remove();
+                    }
+                });
+                
+                input.addEventListener('blur', () => {
+                    setTimeout(() => input.remove(), 200);
+                });
+            });
+            
+            // More menu (filter sheet)
+            const moreMenuBtn = document.getElementById('mobile-more-menu');
+            const filterSheet = document.getElementById('mobile-filter-sheet');
+            const sheetClose = document.getElementById('sheet-close');
+            
+            moreMenuBtn.addEventListener('click', () => {
+                filterSheet.classList.add('active');
+                initializeMobileCategories();
+            });
+            
+            sheetClose.addEventListener('click', () => {
+                filterSheet.classList.remove('active');
+            });
+            
+            // Sheet swipe down to close
+            let startY = 0;
+            const sheetHandle = document.querySelector('.sheet-handle');
+            
+            sheetHandle.addEventListener('touchstart', (e) => {
+                startY = e.touches[0].clientY;
+            });
+            
+            sheetHandle.addEventListener('touchmove', (e) => {
+                const currentY = e.touches[0].clientY;
+                const diff = currentY - startY;
+                if (diff > 0) {
+                    filterSheet.style.transform = `translateY(${diff}px)`;
+                }
+            });
+            
+            sheetHandle.addEventListener('touchend', (e) => {
+                const currentY = e.changedTouches[0].clientY;
+                const diff = currentY - startY;
+                if (diff > 50) {
+                    filterSheet.classList.remove('active');
+                }
+                filterSheet.style.transform = '';
+            });
+            
+            // Initialize mobile categories
+            function initializeMobileCategories() {
+                const categoryList = document.getElementById('mobile-category-list');
+                categoryList.innerHTML = '';
+                
+                const categories = ['admin', 'selling', 'research', 'product', 'hiring', 'other'];
+                categories.forEach(cat => {
+                    const item = document.createElement('label');
+                    item.className = 'mobile-category-item';
+                    item.innerHTML = `
+                        <input type="checkbox" value="${cat}" ${activeCategories.has(cat) ? 'checked' : ''}>
+                        <span>@${cat}</span>
+                    `;
+                    
+                    const checkbox = item.querySelector('input');
+                    checkbox.addEventListener('change', () => {
+                        if (checkbox.checked) {
+                            activeCategories.add(cat);
+                        } else {
+                            activeCategories.delete(cat);
+                        }
+                        updateDesktopCategoryChips();
+                        renderTasks();
+                    });
+                    
+                    categoryList.appendChild(item);
+                });
+            }
+            
+            // Sync mobile sort with desktop
+            const mobileSortSelect = document.getElementById('mobile-sort-select');
+            mobileSortSelect.value = currentSort;
+            mobileSortSelect.addEventListener('change', (e) => {
+                currentSort = e.target.value;
+                document.getElementById('sort-select').value = currentSort;
+                renderTasks();
+            });
+            
+            // Update mobile filter counts
+            function updateMobileFilterCounts() {
+                document.getElementById('mobile-count-all').textContent = document.getElementById('count-all').textContent;
+                document.getElementById('mobile-count-today').textContent = document.getElementById('count-today').textContent;
+                document.getElementById('mobile-count-week').textContent = document.getElementById('count-week').textContent;
+            }
+            
+            // Make working zone collapsible on mobile
+            const workingZone = document.querySelector('.working-zone');
+            if (workingZone) {
+                workingZone.addEventListener('click', (e) => {
+                    if (window.innerWidth <= 768 && !e.target.closest('button')) {
+                        workingZone.classList.toggle('collapsed');
+                    }
+                });
+            }
+            
+            // Update counts on render
+            const originalUpdateFilterCounts = updateFilterCounts;
+            updateFilterCounts = function() {
+                originalUpdateFilterCounts();
+                updateMobileFilterCounts();
+            };
+            
+            // Initial count update
+            updateMobileFilterCounts();
+        }
+        
+        // Update desktop category chips from mobile changes
+        function updateDesktopCategoryChips() {
+            const categoryChips = document.getElementById('category-chips');
+            categoryChips.innerHTML = '';
+            
+            activeCategories.forEach(category => {
+                const chip = document.createElement('div');
+                chip.className = 'category-chip';
+                chip.innerHTML = `
+                    <span class="chip-label">@${category}</span>
+                    <button class="remove-chip" title="Remove filter">×</button>
+                `;
+                
+                chip.querySelector('.remove-chip').addEventListener('click', () => {
+                    activeCategories.delete(category);
+                    chip.remove();
+                    renderTasks();
+                });
+                
+                categoryChips.appendChild(chip);
+            });
+        }
+        
+        // Initialize mobile on load and resize
+        initializeMobile();
+        window.addEventListener('resize', () => {
+            if (window.innerWidth <= 768) {
+                initializeMobile();
+            }
+        });
     </script>
 
 </body>
