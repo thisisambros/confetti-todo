@@ -112,9 +112,9 @@ confetti-todo/
 ├── setup.py           # Cross-platform setup script
 ├── run.py             # Cross-platform run script
 └── tests/
-    ├── test_server.py      # Backend tests
-    ├── test_frontend.html  # Frontend tests
-    └── test_e2e.py        # End-to-end tests
+    ├── test_app.py         # Main application tests
+    ├── test_*_e2e.py       # End-to-end tests
+    └── integration/        # Integration tests
 ```
 
 ### Setting Up Development Environment
@@ -135,14 +135,14 @@ pip install -r requirements-dev.txt  # For testing
 
 3. **Run tests**
 ```bash
-# Backend tests
-pytest tests/test_server.py -v --cov=server
+# Run all tests
+pytest
 
-# Frontend tests
-open tests/test_frontend.html
+# Run with coverage
+pytest --cov=server
 
-# E2E tests
-pytest tests/test_e2e.py -v
+# Run specific test file
+pytest tests/test_app.py -v
 ```
 
 ### API Documentation
@@ -158,7 +158,7 @@ We love contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guideli
 1. Fork the repository
 2. Create your feature branch (`git checkout -b feature/amazing-feature`)
 3. Make your changes
-4. Run tests (`./test.sh`)
+4. Run tests (`pytest`)
 5. Commit your changes (`git commit -m 'Add amazing feature'`)
 6. Push to the branch (`git push origin feature/amazing-feature`)
 7. Open a Pull Request
