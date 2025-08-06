@@ -52,16 +52,12 @@ cd confetti-todo
 
 2. **Run the setup script**
 ```bash
-./setup.sh  # Mac/Linux
-# or
-python setup.py  # Windows
+./setup.py  # All platforms
 ```
 
 3. **Start the app**
 ```bash
-./run.sh  # Mac/Linux
-# or
-python run.py  # Windows
+./run.py  # All platforms
 ```
 
 4. **Open your browser**
@@ -113,8 +109,8 @@ confetti-todo/
 ├── index.html          # Frontend (all-in-one)
 ├── todos.md            # Your tasks (git-ignored)
 ├── requirements.txt    # Python dependencies
-├── setup.sh           # Setup script
-├── run.sh             # Run script
+├── setup.py           # Cross-platform setup script
+├── run.py             # Cross-platform run script
 └── tests/
     ├── test_server.py      # Backend tests
     ├── test_frontend.html  # Frontend tests

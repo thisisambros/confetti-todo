@@ -14,10 +14,10 @@ source venv/bin/activate  # macOS/Linux
 # venv\Scripts\activate   # Windows
 
 # 2. Install dependencies
-./setup.sh --dev  # Installs everything needed
+./setup.py --dev  # Installs everything needed
 
 # 3. Run the app
-./run.sh  # Starts at http://localhost:8000
+./run.py  # Starts at http://localhost:8000
 ```
 
 **⚠️ Virtual Environment Rule**: After initial activation, assume venv is active. All commands below assume you're in venv.
@@ -108,8 +108,8 @@ pytest -n auto               # Parallel execution
 
 ### Development
 ```bash
-python server.py       # Run server
-./run.sh              # Alternative with auto-reload
+python server.py       # Run server directly
+./run.py              # Better: handles port conflicts, opens browser
 ```
 
 ### Code Quality
