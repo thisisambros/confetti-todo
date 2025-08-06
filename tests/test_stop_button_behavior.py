@@ -117,22 +117,21 @@ def test_stop_button_event_handlers(page: Page):
     
     # Inspect the stop button's onclick and event listeners
     button_info = page.evaluate("""
-        const btn = document.querySelector('.stop-working-btn');
-        if (!btn) return null;
-        
-        // Get onclick attribute
-        const onclickAttr = btn.getAttribute('onclick');
-        
-        // Try to get event listeners (this is limited in what it can detect)
-        const listeners = getEventListeners ? getEventListeners(btn) : null;
-        
-        return {
-            onclick: onclickAttr,
-            className: btn.className,
-            disabled: btn.disabled,
-            type: btn.type,
-            innerHTML: btn.innerHTML
-        };
+        () => {
+            const btn = document.querySelector('.stop-working-btn');
+            if (!btn) return null;
+            
+            // Get onclick attribute
+            const onclickAttr = btn.getAttribute('onclick');
+            
+            return {
+                onclick: onclickAttr,
+                className: btn.className,
+                disabled: btn.disabled,
+                type: btn.type,
+                innerHTML: btn.innerHTML
+            };
+        }
     """)
     
     print("Stop button info:")
@@ -149,7 +148,7 @@ def test_stop_button_event_handlers(page: Page):
     print(f"Working task before: {working_state_before}")
     
     # Call stopWorking directly
-    page.evaluate("window.stopWorking()")
+    page.evaluate("() => window.stopWorking && window.stopWorking()")
     time.sleep(0.5)
     
     # Check after calling

@@ -82,9 +82,15 @@ tests/
 
 ### Commands
 ```bash
-pytest                       # Run all tests
+# For E2E tests: Start server first!
+./run.py  # In terminal 1
+pytest    # In terminal 2
+
+# Or run only unit tests (no server needed)
+pytest -k "not (e2e or playwright)"
+
+# Other useful commands
 pytest tests/test_app.py -v  # Specific file
-pytest -k "pattern"          # Match pattern
 pytest --cov=server          # With coverage (90% required)
 pytest -n auto               # Parallel execution
 ```

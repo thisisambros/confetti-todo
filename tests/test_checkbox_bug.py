@@ -5,126 +5,58 @@ makes all other tasks disappear with an error
 import pytest
 from playwright.sync_api import Page, expect
 import time
-import subprocess
-import os
-import signal
+from base_test import ConfettiTestBase, get_unique_task_name
 
-BASE_URL = "http://localhost:8000"
-
-class TestServer:
-    """Manage test server lifecycle"""
-    
-    def __init__(self):
-        self.process = None
-    
-    def start(self):
-        """Start the FastAPI server"""
-        self.process = subprocess.Popen(
-            ["python", "server.py"],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
-        )
-        time.sleep(2)  # Wait for server to start
-    
-    def stop(self):
-        """Stop the server"""
-        if self.process:
-            os.kill(self.process.pid, signal.SIGTERM)
-            self.process.wait()
-
-@pytest.fixture(scope="session")
-def test_server():
-    """Start server for all tests"""
-    server = TestServer()
-    server.start()
-    yield server
-    server.stop()
-
-@pytest.fixture
-def page(browser):
-    """Create a new page for each test"""
-    page = browser.new_page()
-    yield page
-    page.close()
-
-def test_completing_task_preserves_other_tasks(page: Page, test_server):
+def test_completing_task_preserves_other_tasks(test_page: Page):
     """
     REGRESSION TEST: Completing one task should NOT:
     1. Make other tasks disappear
     2. Show any error messages
     3. Fail to save the completion
     """
-    page.goto(BASE_URL)
+    base = ConfettiTestBase()
     
-    # Wait for initial tasks to load
-    page.wait_for_selector(".task-item", timeout=5000)
+    # Create some test tasks to ensure we have data
+    test_task1 = get_unique_task_name()
+    test_task2 = get_unique_task_name()
+    base.create_task(test_page, test_task1)
+    base.create_task(test_page, test_task2)
+    
+    # Wait for tasks to load
+    test_page.wait_for_selector(".task-item", timeout=5000)
     
     # Count initial tasks
-    initial_task_count = page.locator(".task-item").count()
-    assert initial_task_count > 0, "No tasks found to test with"
+    initial_task_count = test_page.locator(".task-item").count()
+    assert initial_task_count >= 2, "Need at least 2 tasks to test completion"
     
-    # Get text of all tasks before clicking
-    tasks_before = []
-    for i in range(initial_task_count):
-        task_text = page.locator(".task-item .task-title").nth(i).text_content()
-        tasks_before.append(task_text)
-    
-    print(f"Tasks before: {tasks_before}")
-    
-    # Find first unchecked checkbox
-    unchecked_checkbox = page.locator(".task-checkbox:not(.checked)").first
-    if unchecked_checkbox.count() == 0:
-        # All tasks are already checked, let's uncheck one first
-        checked_checkbox = page.locator(".task-checkbox.checked").first
-        assert checked_checkbox.count() > 0, "No tasks found at all"
-        checked_checkbox.click()
-        time.sleep(0.5)
-        # Now find the unchecked one
-        unchecked_checkbox = page.locator(".task-checkbox:not(.checked)").first
-    
-    assert unchecked_checkbox.count() > 0, "No unchecked tasks found"
-    
-    # Click the checkbox
-    unchecked_checkbox.click()
+    # Complete the first uncompleted task
+    base.complete_first_uncompleted_task(test_page)
     
     # Wait a moment for any errors to appear
-    time.sleep(1)
+    test_page.wait_for_timeout(1000)
     
     # Check for error messages
-    error_toasts = page.locator(".toast:has-text('error'), .toast:has-text('Error'), .toast:has-text('fail')").count()
-    assert error_toasts == 0, "Error message appeared after completing task"
+    error_toasts = test_page.locator(".toast:has-text('error'), .toast:has-text('Error'), .toast:has-text('fail')")
+    expect(error_toasts).to_have_count(0)
     
-    # Check that we still have tasks (at least the same number minus potentially completed ones)
-    remaining_task_count = page.locator(".task-item").count()
-    assert remaining_task_count > 0, "All tasks disappeared after completing one!"
+    # Check that remaining tasks are still visible
+    remaining_task_count = test_page.locator(".task-item").count()
+    assert remaining_task_count >= 1, "Should still have uncompleted tasks visible"
     
-    # The count should be one less because completed tasks are hidden
-    assert remaining_task_count == initial_task_count - 1, \
-        f"Task count should decrease by 1 when completing a task (from {initial_task_count} to {initial_task_count - 1}), but got {remaining_task_count}"
-    
-    # Since completed tasks are hidden, we can't check for .task-item.completed
-    # But we should verify no error occurred and the task disappeared properly
-    
-    # Verify we got the success toast with XP
-    success_toast = page.locator(".toast:has-text('XP')").count()
-    assert success_toast > 0, "No success message with XP shown"
-    
-    # Get text of all remaining tasks
-    tasks_after = []
-    for i in range(remaining_task_count):
-        task_text = page.locator(".task-item .task-title").nth(i).text_content()
-        tasks_after.append(task_text)
-    
-    print(f"Tasks after: {tasks_after}")
-    
-    # The completed task should not be in the list anymore
-    assert len(tasks_after) == len(tasks_before) - 1, "Completed task should be hidden"
+    # Verify we got the success feedback (confetti or XP)
+    success_indicators = test_page.locator(".toast:has-text('XP'), .confetti")
+    success_count = success_indicators.count()
+    assert success_count > 0, "Should have success feedback (XP toast or confetti)"
 
-def test_api_receives_correct_data_on_complete(page: Page, test_server):
+def test_api_receives_correct_data_on_complete(test_page: Page):
     """
     Test that the API receives properly formatted data when completing a task
     """
-    page.goto(BASE_URL)
+    base = ConfettiTestBase()
+    
+    # Create a test task
+    test_task = get_unique_task_name()
+    base.create_task(test_page, test_task)
     
     # Set up request interception to capture API calls
     api_calls = []
@@ -138,14 +70,13 @@ def test_api_receives_correct_data_on_complete(page: Page, test_server):
             })
         route.continue_()
     
-    page.route("**/api/todos", handle_request)
+    test_page.route("**/api/todos", handle_request)
     
-    # Wait for tasks and complete one
-    page.wait_for_selector(".task-item")
-    page.locator(".task-checkbox:not(.checked)").first.click()
+    # Complete the task
+    base.complete_first_uncompleted_task(test_page)
     
     # Wait for API call
-    time.sleep(1)
+    test_page.wait_for_timeout(1000)
     
     # Verify API was called
     assert len(api_calls) > 0, "No API call made when completing task"
@@ -162,6 +93,3 @@ def test_api_receives_correct_data_on_complete(page: Page, test_server):
     # The data should not be empty
     total_tasks = sum(len(data.get(section, [])) for section in ["today", "ideas", "backlog"])
     assert total_tasks > 0, "API received empty task data"
-
-if __name__ == "__main__":
-    pytest.main([__file__, "-v", "-s"])

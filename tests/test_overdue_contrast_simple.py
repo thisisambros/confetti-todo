@@ -17,8 +17,7 @@ def test_check_overdue_task_contrast(page: Page):
     
     if overdue_tasks.count() == 0:
         print("No overdue tasks found to test")
-        # Take a screenshot of what we have
-        page.screenshot(path="no_overdue_tasks.png")
+        # No screenshot needed - skip test gracefully
         pytest.skip("No overdue tasks available")
     
     # Check the first overdue task
@@ -57,9 +56,8 @@ def test_check_overdue_task_contrast(page: Page):
     bg_color = first_overdue.evaluate("el => window.getComputedStyle(el).backgroundColor")
     print(f"Task background: {bg_color}")
     
-    # Take screenshots
-    first_overdue.screenshot(path="overdue_task_full.png")
-    print("Screenshot saved: overdue_task_full.png")
+    # Visual verification complete - no screenshot needed
+    print("Overdue task contrast verified programmatically")
     
     # Also get the color values
     danger_color = page.evaluate("window.getComputedStyle(document.documentElement).getPropertyValue('--color-danger')")

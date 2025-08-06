@@ -164,27 +164,29 @@ def test_stop_button_css_pointer_events(page: Page):
     
     # Check computed styles on stop button
     styles = page.evaluate("""
-        const btn = document.querySelector('.stop-working-btn');
-        if (!btn) return null;
-        
-        const computed = window.getComputedStyle(btn);
-        const rect = btn.getBoundingClientRect();
-        
-        return {
-            pointerEvents: computed.pointerEvents,
-            cursor: computed.cursor,
-            display: computed.display,
-            visibility: computed.visibility,
-            opacity: computed.opacity,
-            zIndex: computed.zIndex,
-            position: computed.position,
-            rect: {
-                top: rect.top,
-                left: rect.left,
-                width: rect.width,
-                height: rect.height
-            }
-        };
+        () => {
+            const btn = document.querySelector('.stop-working-btn');
+            if (!btn) return null;
+            
+            const computed = window.getComputedStyle(btn);
+            const rect = btn.getBoundingClientRect();
+            
+            return {
+                pointerEvents: computed.pointerEvents,
+                cursor: computed.cursor,
+                display: computed.display,
+                visibility: computed.visibility,
+                opacity: computed.opacity,
+                zIndex: computed.zIndex,
+                position: computed.position,
+                rect: {
+                    top: rect.top,
+                    left: rect.left,
+                    width: rect.width,
+                    height: rect.height
+                }
+            };
+        }
     """)
     
     print("Stop button computed styles:")
@@ -193,20 +195,22 @@ def test_stop_button_css_pointer_events(page: Page):
     
     # Check if anything is overlaying
     element_at_center = page.evaluate("""
-        const btn = document.querySelector('.stop-working-btn');
-        if (!btn) return null;
-        
-        const rect = btn.getBoundingClientRect();
-        const centerX = rect.left + rect.width / 2;
-        const centerY = rect.top + rect.height / 2;
-        
-        const el = document.elementFromPoint(centerX, centerY);
-        return {
-            tagName: el.tagName,
-            className: el.className,
-            id: el.id,
-            isStopButton: el === btn
-        };
+        () => {
+            const btn = document.querySelector('.stop-working-btn');
+            if (!btn) return null;
+            
+            const rect = btn.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+            
+            const el = document.elementFromPoint(centerX, centerY);
+            return {
+                tagName: el.tagName,
+                className: el.className,
+                id: el.id,
+                isStopButton: el === btn
+            };
+        }
     """)
     
     print(f"\nElement at button center: {element_at_center}")

@@ -135,14 +135,15 @@ pip install -r requirements-dev.txt  # For testing
 
 3. **Run tests**
 ```bash
-# Run all tests
-pytest
+# For E2E tests, start the server first:
+./run.py  # In one terminal
+pytest    # In another terminal
+
+# Or run only unit tests (no server needed):
+pytest -k "not (e2e or playwright)"
 
 # Run with coverage
 pytest --cov=server
-
-# Run specific test file
-pytest tests/test_app.py -v
 ```
 
 ### API Documentation

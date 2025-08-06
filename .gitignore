@@ -46,6 +46,7 @@ Thumbs.db
 # Project specific
 todos.md
 todos.test.md
+todos_backup_production.md
 backups/
 *.log
 server.log
