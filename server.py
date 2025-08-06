@@ -1,15 +1,18 @@
 #!/usr/bin/env python3
 import asyncio
 import re
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from typing import List, Dict, Optional, Set
 from pathlib import Path
+import json
+import threading
+import time
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, validator
 import uvicorn
 
 app = FastAPI()
@@ -46,6 +49,41 @@ class Task(BaseModel):
     
 Task.model_rebuild()
 
+class EnergyState(BaseModel):
+    current_energy: int = Field(ge=0, le=12, default=12)
+    max_energy: int = Field(default=12)
+    is_on_break: bool = Field(default=False)
+    break_end_time: Optional[datetime] = None
+    last_reset_date: Optional[date] = None
+    session_id: str = Field(default="default")
+    # Regeneration fields
+    last_regeneration_time: datetime = Field(default_factory=datetime.now)
+    is_regenerating: bool = Field(default=True)
+    regeneration_paused_at: Optional[datetime] = None
+
+class ConsumeEnergyRequest(BaseModel):
+    amount: int = Field(ge=1, le=12)
+    task_id: Optional[str] = None
+    task_metadata: Optional[Dict] = None
+
+class BreakResponse(BaseModel):
+    break_end_time: datetime
+    duration_minutes: int
+    energy_to_restore: int
+
+class RegenerationState(BaseModel):
+    regeneration_time_remaining: int  # seconds until next regeneration
+    is_regenerating: bool
+    last_regeneration_time: datetime
+
+# Constants
+REGENERATION_INTERVAL = 15 * 60  # 15 minutes in seconds
+REGENERATION_AMOUNT = 1  # Energy points regenerated per interval
+
+# In-memory energy storage per session
+energy_storage: Dict[str, EnergyState] = {}
+regeneration_locks: Dict[str, threading.Lock] = {}  # Thread locks for safe regeneration updates
+
 class ConnectionManager:
     def __init__(self):
         self.active_connections: Set[WebSocket] = set()
@@ -67,6 +105,83 @@ class ConnectionManager:
         self.active_connections -= disconnected
 
 manager = ConnectionManager()
+
+def get_or_create_energy_state(session_id: str = "default") -> EnergyState:
+    """Get or create energy state for a session"""
+    if session_id not in energy_storage:
+        energy_storage[session_id] = EnergyState(session_id=session_id)
+        regeneration_locks[session_id] = threading.Lock()
+    
+    # Check for daily reset
+    state = energy_storage[session_id]
+    today = date.today()
+    if state.last_reset_date != today:
+        state.current_energy = state.max_energy
+        state.is_on_break = False
+        state.break_end_time = None
+        state.last_reset_date = today
+        state.last_regeneration_time = datetime.now()
+        state.is_regenerating = True
+        state.regeneration_paused_at = None
+    
+    return state
+
+def calculate_regeneration_state(state: EnergyState) -> RegenerationState:
+    """Calculate current regeneration state"""
+    now = datetime.now()
+    
+    # Regeneration is paused if: on break, at max energy, or manually paused
+    if state.is_on_break or state.current_energy >= state.max_energy or not state.is_regenerating:
+        return RegenerationState(
+            regeneration_time_remaining=0,
+            is_regenerating=False,
+            last_regeneration_time=state.last_regeneration_time
+        )
+    
+    # Calculate time elapsed since last regeneration
+    if state.regeneration_paused_at:
+        # If paused, use the pause time instead of current time
+        elapsed = (state.regeneration_paused_at - state.last_regeneration_time).total_seconds()
+    else:
+        elapsed = (now - state.last_regeneration_time).total_seconds()
+    
+    # Calculate remaining time until next regeneration
+    time_remaining = max(0, REGENERATION_INTERVAL - elapsed)
+    
+    return RegenerationState(
+        regeneration_time_remaining=int(time_remaining),
+        is_regenerating=state.is_regenerating and state.regeneration_paused_at is None,
+        last_regeneration_time=state.last_regeneration_time
+    )
+
+def calculate_energy_cost(task_metadata: Dict) -> int:
+    """Calculate energy cost based on task metadata"""
+    if not task_metadata:
+        raise ValueError("Task metadata is required to calculate energy cost")
+    
+    effort = task_metadata.get('effort')
+    friction = task_metadata.get('friction')
+    
+    if not effort:
+        raise ValueError("Task effort is required to calculate energy cost")
+    if friction is None:
+        raise ValueError("Task friction is required to calculate energy cost")
+    
+    # Parse effort to minutes
+    if effort.endswith('m'):
+        minutes = int(effort[:-1])
+    elif effort.endswith('h'):
+        minutes = int(effort[:-1]) * 60
+    elif effort.endswith('d'):
+        minutes = int(effort[:-1]) * 8 * 60
+    else:
+        raise ValueError(f"Invalid effort format: {effort}")
+    
+    # Calculate energy cost: base 1 energy per 30 minutes, scaled by friction
+    base_cost = max(1, minutes // 30)
+    energy_cost = min(12, max(1, base_cost + (friction - 2)))  # Cap at 12
+    
+    return energy_cost
 
 def parse_markdown_line(line: str, line_num: int, parent_id: Optional[str] = None) -> Optional[Dict]:
     """Parse a single markdown line into a task object"""
@@ -378,6 +493,217 @@ def calculate_xp(task: Dict) -> int:
     
     return base_xp
 
+@app.get("/api/energy")
+async def get_energy(session_id: str = "default"):
+    """Get current energy state"""
+    state = get_or_create_energy_state(session_id)
+    
+    # Check if break is complete
+    if state.is_on_break and state.break_end_time and datetime.now() >= state.break_end_time:
+        # Restore energy
+        duration = (state.break_end_time - datetime.now()).total_seconds() / 60
+        energy_restored = min(state.max_energy - state.current_energy, max(1, int(duration / 15)))
+        state.current_energy = min(state.max_energy, state.current_energy + energy_restored)
+        state.is_on_break = False
+        state.break_end_time = None
+        
+        # Broadcast update
+        await manager.broadcast({
+            "type": "energy_restored",
+            "data": {
+                "current_energy": state.current_energy,
+                "max_energy": state.max_energy,
+                "energy_restored": energy_restored
+            }
+        })
+    
+    return state
+
+@app.post("/api/energy/consume")
+async def consume_energy(request: ConsumeEnergyRequest, session_id: str = "default"):
+    """Consume energy when starting work on a task"""
+    state = get_or_create_energy_state(session_id)
+    
+    if state.is_on_break:
+        raise HTTPException(status_code=400, detail="Cannot consume energy while on break")
+    
+    # Calculate actual energy cost if task metadata provided
+    energy_cost = request.amount
+    if request.task_metadata:
+        energy_cost = calculate_energy_cost(request.task_metadata)
+    
+    if state.current_energy < energy_cost:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Insufficient energy. Current: {state.current_energy}, Required: {energy_cost}"
+        )
+    
+    state.current_energy -= energy_cost
+    
+    # Don't automatically pause regeneration on consume
+    # The frontend will call the pause endpoint when actually working
+    
+    # Broadcast energy update
+    await manager.broadcast({
+        "type": "energy_consumed",
+        "data": {
+            "current_energy": state.current_energy,
+            "max_energy": state.max_energy,
+            "energy_consumed": energy_cost,
+            "task_id": request.task_id
+        }
+    })
+    
+    return {
+        "current_energy": state.current_energy,
+        "energy_consumed": energy_cost,
+        "success": True
+    }
+
+@app.post("/api/energy/break")
+async def start_break(duration_minutes: int = 15, session_id: str = "default") -> BreakResponse:
+    """Start a break and calculate when energy will be restored"""
+    state = get_or_create_energy_state(session_id)
+    
+    if state.current_energy >= state.max_energy:
+        raise HTTPException(status_code=400, detail="Energy is already full")
+    
+    if state.is_on_break:
+        raise HTTPException(status_code=400, detail="Already on break")
+    
+    # Calculate break duration and energy restoration
+    duration_minutes = max(5, min(60, duration_minutes))  # Between 5 and 60 minutes
+    break_end_time = datetime.now() + timedelta(minutes=duration_minutes)
+    
+    # Energy restored: 1 point per 15 minutes of break
+    energy_to_restore = min(
+        state.max_energy - state.current_energy,
+        max(1, duration_minutes // 15)
+    )
+    
+    state.is_on_break = True
+    state.break_end_time = break_end_time
+    
+    # Pause regeneration during break
+    if state.is_regenerating and state.regeneration_paused_at is None:
+        state.regeneration_paused_at = datetime.now()
+    
+    # Broadcast break started
+    await manager.broadcast({
+        "type": "break_started",
+        "data": {
+            "break_end_time": break_end_time.isoformat(),
+            "duration_minutes": duration_minutes,
+            "energy_to_restore": energy_to_restore
+        }
+    })
+    
+    return BreakResponse(
+        break_end_time=break_end_time,
+        duration_minutes=duration_minutes,
+        energy_to_restore=energy_to_restore
+    )
+
+@app.post("/api/energy/restore")
+async def complete_break(session_id: str = "default"):
+    """Complete break early and restore energy"""
+    state = get_or_create_energy_state(session_id)
+    
+    if not state.is_on_break:
+        raise HTTPException(status_code=400, detail="Not currently on break")
+    
+    if not state.break_end_time:
+        raise HTTPException(status_code=400, detail="No break end time set")
+    
+    # Calculate energy to restore based on actual break duration
+    actual_duration = (datetime.now() - (state.break_end_time - timedelta(minutes=15))).total_seconds() / 60
+    energy_restored = min(
+        state.max_energy - state.current_energy,
+        max(1, int(actual_duration / 15))
+    )
+    
+    state.current_energy = min(state.max_energy, state.current_energy + energy_restored)
+    state.is_on_break = False
+    state.break_end_time = None
+    
+    # Resume regeneration if not at max energy
+    if state.current_energy < state.max_energy:
+        state.is_regenerating = True
+        state.regeneration_paused_at = None
+        state.last_regeneration_time = datetime.now()
+    
+    # Broadcast energy restored
+    await manager.broadcast({
+        "type": "energy_restored",
+        "data": {
+            "current_energy": state.current_energy,
+            "max_energy": state.max_energy,
+            "energy_restored": energy_restored
+        }
+    })
+    
+    return {
+        "current_energy": state.current_energy,
+        "energy_restored": energy_restored,
+        "success": True
+    }
+
+@app.get("/api/energy/regeneration")
+async def get_regeneration_state(session_id: str = "default") -> RegenerationState:
+    """Get current regeneration state"""
+    state = get_or_create_energy_state(session_id)
+    return calculate_regeneration_state(state)
+
+@app.post("/api/energy/regeneration/pause")
+async def pause_regeneration(session_id: str = "default"):
+    """Pause regeneration when work starts"""
+    state = get_or_create_energy_state(session_id)
+    
+    # Only pause if currently regenerating
+    if state.is_regenerating and state.regeneration_paused_at is None and not state.is_on_break:
+        state.regeneration_paused_at = datetime.now()
+        
+        # Broadcast regeneration paused
+        regen_state = calculate_regeneration_state(state)
+        await manager.broadcast({
+            "type": "regeneration_paused",
+            "data": {
+                "regeneration_time_remaining": regen_state.regeneration_time_remaining,
+                "is_regenerating": regen_state.is_regenerating,
+                "last_regeneration_time": regen_state.last_regeneration_time.isoformat()
+            }
+        })
+    
+    return {"success": True}
+
+@app.post("/api/energy/regeneration/resume")
+async def resume_regeneration(session_id: str = "default"):
+    """Resume regeneration when work stops"""
+    state = get_or_create_energy_state(session_id)
+    
+    # Only resume if we were paused and not on break
+    if state.regeneration_paused_at and not state.is_on_break:
+        # Calculate elapsed pause time
+        pause_duration = (datetime.now() - state.regeneration_paused_at).total_seconds()
+        
+        # Adjust last regeneration time to account for pause
+        state.last_regeneration_time = state.last_regeneration_time + timedelta(seconds=pause_duration)
+        state.regeneration_paused_at = None
+        state.is_regenerating = True
+        
+        # Broadcast regeneration resumed
+        regen_state = calculate_regeneration_state(state)
+        await manager.broadcast({
+            "type": "regeneration_resumed",
+            "data": {
+                "regeneration_time_remaining": regen_state.regeneration_time_remaining,
+                "is_regenerating": regen_state.is_regenerating,
+                "last_regeneration_time": regen_state.last_regeneration_time.isoformat()
+            }
+        })
+    
+    return {"success": True}
+
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await manager.connect(websocket)
@@ -401,6 +727,79 @@ async def watch_file():
         except Exception as e:
             print(f"Watch error: {e}")
         await asyncio.sleep(1)
+
+# Background task for automatic energy regeneration
+async def regeneration_task():
+    """Background task that checks for energy regeneration every second"""
+    while True:
+        try:
+            # Check all sessions for regeneration
+            for session_id, state in list(energy_storage.items()):
+                if not state.is_regenerating or state.regeneration_paused_at:
+                    continue
+                
+                # Skip if on break or at max energy
+                if state.is_on_break or state.current_energy >= state.max_energy:
+                    continue
+                
+                # Check if it's time to regenerate
+                elapsed = (datetime.now() - state.last_regeneration_time).total_seconds()
+                if elapsed >= REGENERATION_INTERVAL:
+                    # Use lock to ensure thread safety
+                    with regeneration_locks.get(session_id, threading.Lock()):
+                        # Double-check conditions after acquiring lock
+                        if (state.current_energy < state.max_energy and 
+                            state.is_regenerating and 
+                            not state.regeneration_paused_at and 
+                            not state.is_on_break):
+                            
+                            # Regenerate energy
+                            state.current_energy = min(state.max_energy, state.current_energy + REGENERATION_AMOUNT)
+                            state.last_regeneration_time = datetime.now()
+                            
+                            # Broadcast regeneration
+                            await manager.broadcast({
+                                "type": "energy_regenerated",
+                                "data": {
+                                    "current_energy": state.current_energy,
+                                    "max_energy": state.max_energy,
+                                    "energy_regenerated": REGENERATION_AMOUNT,
+                                    "session_id": session_id
+                                }
+                            })
+                            
+                            # If at max energy, stop regenerating
+                            if state.current_energy >= state.max_energy:
+                                state.is_regenerating = False
+        
+        except Exception as e:
+            print(f"Regeneration error: {e}")
+        
+        await asyncio.sleep(1)  # Check every second
+
+# Store background tasks
+background_tasks = []
+
+@app.on_event("startup")
+async def startup_event():
+    """Start background tasks when the app starts"""
+    # Start file watcher
+    task1 = asyncio.create_task(watch_file())
+    background_tasks.append(task1)
+    
+    # Start regeneration task
+    task2 = asyncio.create_task(regeneration_task())
+    background_tasks.append(task2)
+    
+    print("✅ Background tasks started: file watcher, energy regeneration")
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """Cancel background tasks when the app shuts down"""
+    for task in background_tasks:
+        task.cancel()
+    await asyncio.gather(*background_tasks, return_exceptions=True)
+    print("✅ Background tasks stopped")
 
 if __name__ == "__main__":
     # Run the server

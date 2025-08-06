@@ -2477,3 +2477,481 @@ kbd {
     transform: translateX(-50%) translateY(0);
     opacity: 1;
 }
+
+/* Energy System Styles */
+.energy-display {
+    text-align: center;
+    padding: var(--space-3) 0;
+}
+
+.energy-level {
+    font-size: var(--font-size-lg);
+    font-weight: bold;
+    margin-bottom: var(--space-2);
+}
+
+.energy-bar-container {
+    position: relative;
+    margin-bottom: var(--space-2);
+}
+
+.energy-bar {
+    width: 100%;
+    height: 20px;
+    background: var(--color-border);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+    position: relative;
+}
+
+.energy-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #22c55e 0%, #16a34a 100%);
+    transition: width 0.3s ease, background 0.3s ease;
+    border-radius: var(--radius-full);
+}
+
+.energy-fill.warning {
+    background: linear-gradient(90deg, #f59e0b 0%, #d97706 100%);
+}
+
+.energy-fill.critical {
+    background: linear-gradient(90deg, #dc2626 0%, #b91c1c 100%);
+}
+
+.energy-threshold-warning {
+    position: absolute;
+    top: 0;
+    left: 16.67%; /* 2/12 */
+    width: 2px;
+    height: 100%;
+    background: rgba(220, 38, 38, 0.5);
+}
+
+.energy-threshold-suggestion {
+    position: absolute;
+    top: 0;
+    left: 33.33%; /* 4/12 */
+    width: 2px;
+    height: 100%;
+    background: rgba(245, 158, 11, 0.5);
+}
+
+.energy-status {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+    margin-bottom: var(--space-2);
+}
+
+/* Energy Regeneration Timer */
+.energy-regeneration {
+    margin-top: var(--space-2);
+    margin-bottom: var(--space-3);
+    min-height: 24px;
+}
+
+.regen-timer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    padding: var(--space-2);
+    background: rgba(34, 197, 94, 0.1);
+    border-radius: var(--radius-medium);
+    font-size: var(--font-size-sm);
+    transition: all 0.3s ease;
+}
+
+.regen-timer.paused {
+    background: rgba(245, 158, 11, 0.1);
+    opacity: 0.8;
+}
+
+.regen-timer.paused .regen-icon {
+    animation: none;
+    opacity: 0.5;
+}
+
+.regen-timer.paused .regen-text {
+    color: var(--color-warning);
+}
+
+.regen-timer.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.regen-icon {
+    font-size: 16px;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { 
+        transform: scale(1);
+        opacity: 0.8;
+    }
+    50% { 
+        transform: scale(1.1);
+        opacity: 1;
+    }
+}
+
+.regen-text {
+    color: var(--color-success);
+    font-weight: 500;
+}
+
+#regen-countdown {
+    font-variant-numeric: tabular-nums;
+    font-weight: bold;
+}
+
+.break-button {
+    width: 100%;
+    padding: var(--space-2) var(--space-4);
+    background: var(--color-primary);
+    color: white;
+    border: none;
+    border-radius: var(--radius-medium);
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    position: relative;
+    overflow: visible;
+}
+
+.coffee-icon {
+    font-size: 20px;
+    position: relative;
+    display: inline-block;
+}
+
+/* Steam animation */
+.coffee-icon::before,
+.coffee-icon::after {
+    content: '';
+    position: absolute;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    animation: steam 3s ease-out infinite;
+}
+
+.coffee-icon::before {
+    width: 3px;
+    height: 8px;
+    left: 6px;
+    top: -10px;
+    animation-delay: 0s;
+}
+
+.coffee-icon::after {
+    width: 3px;
+    height: 6px;
+    left: 12px;
+    top: -8px;
+    animation-delay: 0.5s;
+}
+
+@keyframes steam {
+    0% {
+        transform: translateY(0) scaleX(1);
+        opacity: 0;
+    }
+    15% {
+        opacity: 0.8;
+    }
+    50% {
+        transform: translateY(-12px) scaleX(1.5);
+        opacity: 0.4;
+    }
+    100% {
+        transform: translateY(-20px) scaleX(2);
+        opacity: 0;
+    }
+}
+
+.break-text {
+    font-weight: 500;
+}
+
+.break-button:hover {
+    background: var(--color-primary-dark);
+}
+
+/* Enhanced states based on energy level */
+.break-button.low-energy {
+    background: linear-gradient(135deg, #f59e0b, #dc2626);
+    animation: gentle-pulse 2s ease-in-out infinite;
+}
+
+.break-button.low-energy .coffee-icon::before,
+.break-button.low-energy .coffee-icon::after {
+    animation-duration: 2s;
+    background: rgba(255, 255, 255, 0.5);
+}
+
+@keyframes gentle-pulse {
+    0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+    50% {
+        transform: scale(1.02);
+        box-shadow: 0 4px 8px rgba(220, 38, 38, 0.3);
+    }
+}
+
+.break-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Task Energy Cost Indicator */
+.task-energy-cost {
+    color: var(--color-warning);
+    font-weight: bold;
+    font-size: var(--font-size-sm);
+}
+
+/* Break Modal Styles */
+.break-modal {
+    background: var(--color-bg);
+    border-radius: var(--radius-medium);
+    padding: var(--space-6);
+    max-width: 480px;
+    width: 90%;
+    margin: auto;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.break-modal .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-4);
+}
+
+.break-modal h2 {
+    margin: 0;
+    font-size: var(--font-size-lg);
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: var(--font-size-lg);
+    cursor: pointer;
+    padding: var(--space-1);
+    opacity: 0.5;
+    transition: opacity 0.2s ease;
+}
+
+.modal-close:hover {
+    opacity: 1;
+}
+
+.break-message {
+    margin-bottom: var(--space-6);
+    text-align: center;
+    color: var(--color-text-muted);
+}
+
+.break-options {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-4);
+    margin-bottom: var(--space-4);
+}
+
+.break-option {
+    background: var(--color-bg-secondary);
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-medium);
+    padding: var(--space-4);
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.break-option:hover {
+    border-color: var(--color-primary);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.break-duration {
+    font-size: var(--font-size-lg);
+    font-weight: bold;
+    color: var(--color-primary);
+    margin-bottom: var(--space-2);
+}
+
+.break-label {
+    font-size: var(--font-size-sm);
+    color: var(--color-text);
+    margin-bottom: var(--space-2);
+}
+
+.break-restore {
+    font-size: var(--font-size-xs);
+    color: var(--color-success);
+    font-weight: bold;
+}
+
+.break-warning {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-3);
+    background: rgba(220, 38, 38, 0.1);
+    border: 1px solid rgba(220, 38, 38, 0.3);
+    border-radius: var(--radius-medium);
+    color: var(--color-danger);
+    font-size: var(--font-size-sm);
+}
+
+.warning-icon {
+    font-size: var(--font-size-md);
+}
+
+/* Break Timer Styles */
+.break-timer {
+    position: fixed;
+    bottom: var(--space-8);
+    right: var(--space-8);
+    background: var(--color-bg);
+    border: 2px solid var(--color-primary);
+    border-radius: var(--radius-medium);
+    padding: var(--space-4);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    min-width: 240px;
+}
+
+.break-timer-content {
+    text-align: center;
+}
+
+.break-timer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-3);
+}
+
+.break-type {
+    font-weight: bold;
+    color: var(--color-primary);
+}
+
+.break-cancel {
+    background: none;
+    border: none;
+    font-size: var(--font-size-md);
+    cursor: pointer;
+    opacity: 0.5;
+    transition: opacity 0.2s ease;
+}
+
+.break-cancel:hover {
+    opacity: 1;
+}
+
+.break-timer-display {
+    font-size: 2rem;
+    font-weight: bold;
+    font-variant-numeric: tabular-nums;
+    margin-bottom: var(--space-3);
+}
+
+.break-progress-bar {
+    width: 100%;
+    height: 6px;
+    background: var(--color-border);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+    margin-bottom: var(--space-3);
+}
+
+.break-progress-fill {
+    height: 100%;
+    background: var(--color-primary);
+    transition: width 0.1s linear;
+}
+
+.break-message {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+}
+
+/* Energy Warning Animations */
+@keyframes pulse-warning {
+    0% { opacity: 1; }
+    50% { opacity: 0.7; }
+    100% { opacity: 1; }
+}
+
+.energy-fill.warning {
+    animation: pulse-warning 2s ease-in-out infinite;
+}
+
+.energy-fill.critical {
+    animation: pulse-warning 1s ease-in-out infinite;
+}
+
+/* Mobile Responsive for Energy System */
+@media (max-width: 768px) {
+    .break-options {
+        grid-template-columns: 1fr;
+    }
+    
+    .break-timer {
+        bottom: 70px; /* Above mobile nav */
+        right: var(--space-4);
+        left: var(--space-4);
+        min-width: auto;
+    }
+    
+    .energy-display {
+        padding: var(--space-2) 0;
+    }
+    
+    .energy-bar {
+        height: 16px;
+    }
+    
+    /* Mobile Regeneration Timer */
+    .energy-regeneration {
+        margin-top: var(--space-1);
+        margin-bottom: var(--space-2);
+    }
+    
+    .regen-timer {
+        padding: var(--space-1) var(--space-2);
+        font-size: 12px;
+    }
+    
+    .regen-icon {
+        font-size: 14px;
+    }
+    
+    .regen-text {
+        font-size: 12px;
+    }
+    
+    .regen-timer.paused .regen-text {
+        display: none;
+    }
+    
+    .regen-timer.paused::after {
+        content: 'Paused';
+        color: var(--color-warning);
+        font-size: 12px;
+    }
+}

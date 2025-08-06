@@ -145,12 +145,32 @@
                 </div>
             </div>
             
+            
             <div class="widget-section">
-                <div class="widget-title">Streak</div>
-                <div style="text-align: center; font-size: 1.5rem;">
-                    <span>🔥</span>
-                    <span id="streak-days" style="font-weight: bold;">0</span>
+                <div class="widget-title">Energy</div>
+                <div class="energy-display">
+                    <div class="energy-level">
+                        <span id="current-energy">12</span>/<span id="max-energy">12</span>
+                    </div>
+                    <div class="energy-bar-container">
+                        <div class="energy-bar">
+                            <div class="energy-fill" id="energy-fill"></div>
+                            <div class="energy-threshold-warning"></div>
+                            <div class="energy-threshold-suggestion"></div>
+                        </div>
+                    </div>
+                    <div class="energy-status" id="energy-status">Full energy</div>
+                    <div class="energy-regeneration" id="energy-regeneration">
+                        <div class="regen-timer" id="regen-timer">
+                            <span class="regen-icon">⚡</span>
+                            <span class="regen-text">Next energy in <span id="regen-countdown">15:00</span></span>
+                        </div>
+                    </div>
                 </div>
+                <button class="break-button" id="take-break-btn" onclick="showBreakModal()">
+                    <span class="coffee-icon">☕</span>
+                    <span class="break-text">Take a Break</span>
+                </button>
             </div>
         </div>
     </div>
@@ -207,9 +227,9 @@
             <div class="palette-field" id="effort-field" role="group" aria-labelledby="effort-label">
                 <div class="palette-label" id="effort-label">Effort (default ☑ 30m)</div>
                 <div class="palette-options" id="effort-options" role="radiogroup" aria-labelledby="effort-label">
-                    <div class="palette-option" data-value="15m" role="radio" aria-checked="false">
-                        <kbd>1</kbd> 15m
-                        <div class="xp-preview" id="xp-15m"></div>
+                    <div class="palette-option" data-value="5m" role="radio" aria-checked="false">
+                        <kbd>1</kbd> <5m
+                        <div class="xp-preview" id="xp-5m"></div>
                     </div>
                     <div class="palette-option selected" data-value="30m" role="radio" aria-checked="true">
                         <kbd>2</kbd> 30m
@@ -244,6 +264,57 @@
 
     <!-- Confetti Container -->
     <div class="confetti-container" id="confetti-container"></div>
+    
+    <!-- Break Suggestion Modal -->
+    <div id="break-modal" class="modal-overlay hidden" onclick="if(event.target === this) closeBreakModal()">
+        <div class="break-modal">
+            <div class="modal-header">
+                <h2>Time for a Break! 🌊</h2>
+                <button class="modal-close" onclick="closeBreakModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <p class="break-message">You've used <span id="energy-used">8</span> energy. Recharge to maintain peak performance!</p>
+                
+                <div class="break-options">
+                    <button class="break-option" onclick="startBreak(5)">
+                        <div class="break-duration">5 min</div>
+                        <div class="break-label">Quick Stretch</div>
+                        <div class="break-restore">+3 energy</div>
+                    </button>
+                    <button class="break-option" onclick="startBreak(15)">
+                        <div class="break-duration">15 min</div>
+                        <div class="break-label">Coffee Break</div>
+                        <div class="break-restore">+8 energy</div>
+                    </button>
+                    <button class="break-option" onclick="startBreak(30)">
+                        <div class="break-duration">30 min</div>
+                        <div class="break-label">Power Nap</div>
+                        <div class="break-restore">Full restore</div>
+                    </button>
+                </div>
+                
+                <div class="break-warning hidden" id="break-warning">
+                    <span class="warning-icon">⚠️</span>
+                    <span>Energy critically low! A break is highly recommended.</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Break Timer Interface -->
+    <div id="break-timer" class="break-timer hidden">
+        <div class="break-timer-content">
+            <div class="break-timer-header">
+                <span class="break-type" id="break-type">Coffee Break</span>
+                <button class="break-cancel" onclick="cancelBreak()">✕</button>
+            </div>
+            <div class="break-timer-display" id="break-timer-display">15:00</div>
+            <div class="break-progress-bar">
+                <div class="break-progress-fill" id="break-progress-fill"></div>
+            </div>
+            <div class="break-message">Step away from your screen and relax 🌿</div>
+        </div>
+    </div>
     
     <!-- Mobile Bottom Navigation -->
     <nav class="mobile-bottom-nav" id="mobile-bottom-nav">
@@ -316,6 +387,215 @@
         let expandedTasks = new Set(); // Track which tasks are expanded
         let northStarTask = null; // Today's North Star task
         let searchTerm = ''; // Current search term
+        
+        // Energy System Variables
+        const MAX_ENERGY = 12;
+        const ENERGY_WARNING_THRESHOLD = 2;
+        const ENERGY_SUGGESTION_THRESHOLD = 4;
+        const REGENERATION_INTERVAL = 15 * 60 * 1000; // 15 minutes in milliseconds
+        let currentEnergy = MAX_ENERGY;
+        let breakTimer = null;
+        let breakStartTime = null;
+        let breakDuration = null;
+        let isOnBreak = false;
+        
+        // Energy Regeneration Manager
+        class RegenerationManager {
+            constructor() {
+                this.timer = null;
+                this.lastRegenTime = Date.now();
+                this.isPaused = false;
+                this.updateInterval = null;
+                this.timeRemaining = REGENERATION_INTERVAL;
+            }
+            
+            init() {
+                this.loadState();
+                this.start();
+                this.updateDisplay();
+            }
+            
+            start() {
+                if (this.timer) return;
+                
+                // Calculate time elapsed since last regen
+                const elapsed = Date.now() - this.lastRegenTime;
+                
+                // Check if we should regenerate multiple points (for accumulated time)
+                if (elapsed >= REGENERATION_INTERVAL) {
+                    const pointsToRegen = Math.floor(elapsed / REGENERATION_INTERVAL);
+                    const actualRegen = Math.min(pointsToRegen, MAX_ENERGY - currentEnergy);
+                    
+                    if (actualRegen > 0 && !workingTask && !isOnBreak) {
+                        restoreEnergy(actualRegen);
+                        showToast(`+${actualRegen} energy regenerated! ⚡`);
+                        // Update last regen time to account for regenerated points
+                        this.lastRegenTime = Date.now() - (elapsed % REGENERATION_INTERVAL);
+                    }
+                }
+                
+                // Calculate remaining time until next regen
+                const timeSinceLastRegen = Date.now() - this.lastRegenTime;
+                this.timeRemaining = Math.max(0, REGENERATION_INTERVAL - timeSinceLastRegen);
+                
+                // Set timer for next regeneration
+                this.timer = setTimeout(() => {
+                    this.regenerate();
+                }, this.timeRemaining);
+                
+                // Update display every second
+                this.updateInterval = setInterval(() => {
+                    this.updateDisplay();
+                }, 1000);
+                
+                this.isPaused = false;
+                this.updateDisplay();
+            }
+            
+            pause() {
+                if (!this.timer) return;
+                
+                clearTimeout(this.timer);
+                clearInterval(this.updateInterval);
+                this.timer = null;
+                this.updateInterval = null;
+                
+                // Save remaining time
+                const elapsed = Date.now() - this.lastRegenTime;
+                this.timeRemaining = Math.max(0, REGENERATION_INTERVAL - elapsed);
+                
+                this.isPaused = true;
+                this.updateDisplay();
+                this.saveState();
+            }
+            
+            resume() {
+                if (this.timer || !this.isPaused) return;
+                
+                // Adjust last regen time to account for pause
+                this.lastRegenTime = Date.now() - (REGENERATION_INTERVAL - this.timeRemaining);
+                this.isPaused = false;
+                this.start();
+            }
+            
+            regenerate() {
+                if (currentEnergy < MAX_ENERGY && !workingTask && !isOnBreak) {
+                    restoreEnergy(1);
+                    showToast('+1 energy regenerated! ⚡');
+                    this.lastRegenTime = Date.now();
+                }
+                
+                // Clear existing timer
+                if (this.timer) clearTimeout(this.timer);
+                if (this.updateInterval) clearInterval(this.updateInterval);
+                this.timer = null;
+                this.updateInterval = null;
+                
+                // Save state
+                this.saveState();
+                
+                // Restart timer for next regeneration
+                if (currentEnergy < MAX_ENERGY && !this.isPaused) {
+                    this.start();
+                }
+            }
+            
+            updateDisplay() {
+                const regenTimer = document.getElementById('regen-timer');
+                const countdown = document.getElementById('regen-countdown');
+                
+                if (!regenTimer || !countdown) return;
+                
+                // Hide timer if at full energy or on break
+                if (currentEnergy >= MAX_ENERGY || isOnBreak) {
+                    regenTimer.classList.add('hidden');
+                    return;
+                }
+                
+                regenTimer.classList.remove('hidden');
+                
+                // Update paused state
+                if (this.isPaused || workingTask) {
+                    regenTimer.classList.add('paused');
+                    const regenText = regenTimer.querySelector('.regen-text');
+                    if (regenText) {
+                        regenText.innerHTML = 'Regeneration paused (working)';
+                    }
+                } else {
+                    regenTimer.classList.remove('paused');
+                    const regenText = regenTimer.querySelector('.regen-text');
+                    if (regenText) {
+                        regenText.innerHTML = 'Next energy in <span id="regen-countdown"></span>';
+                        const newCountdown = document.getElementById('regen-countdown');
+                        if (newCountdown) {
+                            // Calculate time remaining
+                            const elapsed = Date.now() - this.lastRegenTime;
+                            const remaining = Math.max(0, REGENERATION_INTERVAL - elapsed);
+                            
+                            // If timer reached 0, trigger regeneration
+                            if (remaining === 0 && !this.isPaused) {
+                                this.regenerate();
+                                return;
+                            }
+                            
+                            const minutes = Math.floor(remaining / 60000);
+                            const seconds = Math.floor((remaining % 60000) / 1000);
+                            newCountdown.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                        }
+                    }
+                }
+            }
+            
+            saveState() {
+                const state = {
+                    lastRegenTime: this.lastRegenTime,
+                    isPaused: this.isPaused,
+                    timeRemaining: this.timeRemaining
+                };
+                localStorage.setItem('regenerationState', JSON.stringify(state));
+            }
+            
+            loadState() {
+                try {
+                    const saved = localStorage.getItem('regenerationState');
+                    if (saved) {
+                        const state = JSON.parse(saved);
+                        this.lastRegenTime = state.lastRegenTime || Date.now();
+                        this.isPaused = state.isPaused || false;
+                        this.timeRemaining = state.timeRemaining || REGENERATION_INTERVAL;
+                        
+                        // Check if we should regenerate points from offline time
+                        if (!this.isPaused) {
+                            const elapsed = Date.now() - this.lastRegenTime;
+                            if (elapsed >= REGENERATION_INTERVAL) {
+                                const pointsToRegen = Math.floor(elapsed / REGENERATION_INTERVAL);
+                                const actualRegen = Math.min(pointsToRegen, MAX_ENERGY - currentEnergy);
+                                
+                                if (actualRegen > 0 && !workingTask && !isOnBreak) {
+                                    restoreEnergy(actualRegen);
+                                    showToast(`Welcome back! +${actualRegen} energy regenerated while you were away! ⚡`);
+                                    // Update last regen time to account for regenerated points
+                                    this.lastRegenTime = Date.now() - (elapsed % REGENERATION_INTERVAL);
+                                    this.saveState();
+                                }
+                            }
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error loading regeneration state:', error);
+                }
+            }
+            
+            destroy() {
+                if (this.timer) clearTimeout(this.timer);
+                if (this.updateInterval) clearInterval(this.updateInterval);
+                this.timer = null;
+                this.updateInterval = null;
+            }
+        }
+        
+        // Initialize regeneration manager
+        const regenerationManager = new RegenerationManager();
         
         // Utility function to escape HTML
         function escapeHtml(text) {
@@ -698,7 +978,7 @@
                     case 'xp':
                         return calculateXP(b) - calculateXP(a);
                     case 'effort':
-                        const effortOrder = { '15m': 1, '30m': 2, '1h': 3, '4h': 4, '1d': 5 };
+                        const effortOrder = { '5m': 1, '15m': 2, '30m': 3, '1h': 4, '4h': 5, '1d': 6 };
                         return (effortOrder[a.effort] || 99) - (effortOrder[b.effort] || 99);
                     case 'category':
                         return (a.category || 'zzz').localeCompare(b.category || 'zzz');
@@ -952,6 +1232,16 @@
                 effort.className = 'task-effort';
                 effort.textContent = task.effort;
                 meta.appendChild(effort);
+            }
+            
+            // Add energy cost indicator
+            const energyCost = calculateEnergyCost(task);
+            if (energyCost > 0) {
+                const energy = document.createElement('span');
+                energy.className = 'task-energy-cost';
+                energy.textContent = `⚡${energyCost}`;
+                energy.title = `Requires ${energyCost} energy`;
+                meta.appendChild(energy);
             }
             
             if (task.due_date) {
@@ -1223,17 +1513,29 @@
             document.getElementById('tasks-today').textContent = stats.completed_today;
             document.getElementById('xp-today').textContent = stats.xp_today;
             
-            // Update streak
-            document.getElementById('streak-days').textContent = `${stats.streak}-day streak`;
         }
 
         // Working Zone Functions
         function startWorkingOn(task) {
+            // Check if user has enough energy
+            const energyCost = calculateEnergyCost(task);
+            if (currentEnergy < energyCost) {
+                showToast(`Not enough energy! You need ${energyCost} energy but have ${currentEnergy}.`);
+                showBreakModal();
+                return;
+            }
+            
+            // Consume energy when starting work
+            consumeEnergy(energyCost);
+            
             workingTask = task;
             workingStartTime = new Date();
             updateWorkingZone();
             startWorkingTimer();
             saveUIState();
+            
+            // Pause regeneration when working
+            regenerationManager.pause();
         }
         
         function stopWorking() {
@@ -1250,6 +1552,9 @@
             workingStartTime = null;
             updateWorkingZone();
             saveUIState();
+            
+            // Resume regeneration when stopping work
+            regenerationManager.resume();
         }
         
         function updateWorkingZone() {
@@ -1603,6 +1908,10 @@
         window.completeWorkingTask = completeWorkingTask;
         window.showNorthStarPicker = showNorthStarPicker;
         window.closeNorthStarPicker = closeNorthStarPicker;
+        window.showBreakModal = showBreakModal;
+        window.closeBreakModal = closeBreakModal;
+        window.startBreak = startBreak;
+        window.cancelBreak = cancelBreak;
 
         async function toggleTask(task) {
             const wasCompleted = task.is_completed;
@@ -1773,7 +2082,7 @@
         }
 
         function calculateXP(task) {
-            const effortMap = { '15m': 15, '30m': 30, '1h': 60, '4h': 240, '1d': 480 };
+            const effortMap = { '5m': 5, '15m': 15, '30m': 30, '1h': 60, '4h': 240, '1d': 480 };
             const minutes = effortMap[task.effort] || 30;
             const friction = task.friction || 2;
             let xp = Math.round(100 * Math.pow(1 + minutes / 60, 0.5) * friction);
@@ -1787,6 +2096,214 @@
             }
             
             return xp;
+        }
+        
+        // Energy System Functions
+        function calculateEnergyCost(task) {
+            const effortMap = { '5m': 1, '15m': 1, '30m': 2, '1h': 4, '4h': 16, '1d': 32 };
+            const effortCost = effortMap[task.effort] || 2;
+            const friction = task.friction || 1;
+            return Math.ceil(effortCost * friction);
+        }
+        
+        function updateEnergyDisplay() {
+            const energyFill = document.getElementById('energy-fill');
+            const currentEnergyEl = document.getElementById('current-energy');
+            const energyStatus = document.getElementById('energy-status');
+            const takeBreakBtn = document.getElementById('take-break-btn');
+            
+            currentEnergyEl.textContent = currentEnergy;
+            
+            const energyPercent = (currentEnergy / MAX_ENERGY) * 100;
+            energyFill.style.width = `${energyPercent}%`;
+            
+            // Update energy bar color and status
+            energyFill.classList.remove('warning', 'critical');
+            takeBreakBtn.classList.remove('low-energy');
+            
+            if (currentEnergy <= ENERGY_WARNING_THRESHOLD) {
+                energyFill.classList.add('critical');
+                energyStatus.textContent = 'Energy critical!';
+                takeBreakBtn.querySelector('.break-text').textContent = 'Take a Break Now!';
+                takeBreakBtn.classList.add('low-energy');
+            } else if (currentEnergy <= ENERGY_SUGGESTION_THRESHOLD) {
+                energyFill.classList.add('warning');
+                energyStatus.textContent = 'Consider a break';
+                takeBreakBtn.querySelector('.break-text').textContent = 'Take a Break';
+                takeBreakBtn.classList.add('low-energy');
+            } else {
+                energyStatus.textContent = currentEnergy === MAX_ENERGY ? 'Full energy' : 'Good energy';
+                takeBreakBtn.querySelector('.break-text').textContent = 'Take a Break';
+            }
+            
+            // Check if we should show break suggestion
+            if (!isOnBreak && currentEnergy <= ENERGY_SUGGESTION_THRESHOLD && workingTask) {
+                showBreakSuggestion();
+            }
+            
+            // Update regeneration display
+            regenerationManager.updateDisplay();
+        }
+        
+        function consumeEnergy(amount) {
+            currentEnergy = Math.max(0, currentEnergy - amount);
+            updateEnergyDisplay();
+            saveEnergyState();
+        }
+        
+        function restoreEnergy(amount) {
+            currentEnergy = Math.min(MAX_ENERGY, currentEnergy + amount);
+            updateEnergyDisplay();
+            saveEnergyState();
+        }
+        
+        function showBreakModal() {
+            const modal = document.getElementById('break-modal');
+            const energyUsed = document.getElementById('energy-used');
+            const breakWarning = document.getElementById('break-warning');
+            
+            energyUsed.textContent = MAX_ENERGY - currentEnergy;
+            
+            if (currentEnergy <= ENERGY_WARNING_THRESHOLD) {
+                breakWarning.classList.remove('hidden');
+            } else {
+                breakWarning.classList.add('hidden');
+            }
+            
+            modal.classList.remove('hidden');
+        }
+        
+        function closeBreakModal() {
+            document.getElementById('break-modal').classList.add('hidden');
+        }
+        
+        function showBreakSuggestion() {
+            // Don't show if already shown recently
+            const lastSuggestion = localStorage.getItem('lastBreakSuggestion');
+            const now = Date.now();
+            if (lastSuggestion && now - parseInt(lastSuggestion) < 300000) return; // 5 minutes
+            
+            localStorage.setItem('lastBreakSuggestion', now);
+            showBreakModal();
+        }
+        
+        function startBreak(minutes) {
+            closeBreakModal();
+            
+            isOnBreak = true;
+            breakDuration = minutes * 60; // Convert to seconds
+            breakStartTime = Date.now();
+            
+            // Stop working if in progress
+            if (workingTask) {
+                stopWorking();
+            }
+            
+            // Pause regeneration during break
+            regenerationManager.pause();
+            
+            // Show break timer
+            const breakTimerEl = document.getElementById('break-timer');
+            const breakType = document.getElementById('break-type');
+            
+            if (minutes === 5) {
+                breakType.textContent = 'Quick Stretch';
+            } else if (minutes === 15) {
+                breakType.textContent = 'Coffee Break';
+            } else {
+                breakType.textContent = 'Power Nap';
+            }
+            
+            breakTimerEl.classList.remove('hidden');
+            updateBreakTimer();
+            
+            // Start timer interval
+            if (breakTimer) clearInterval(breakTimer);
+            breakTimer = setInterval(updateBreakTimer, 1000);
+        }
+        
+        function updateBreakTimer() {
+            const elapsed = Math.floor((Date.now() - breakStartTime) / 1000);
+            const remaining = Math.max(0, breakDuration - elapsed);
+            
+            const minutes = Math.floor(remaining / 60);
+            const seconds = remaining % 60;
+            
+            const display = document.getElementById('break-timer-display');
+            display.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            
+            const progressFill = document.getElementById('break-progress-fill');
+            const progress = ((breakDuration - remaining) / breakDuration) * 100;
+            progressFill.style.width = `${progress}%`;
+            
+            if (remaining === 0) {
+                completeBreak();
+            }
+        }
+        
+        function completeBreak() {
+            cancelBreak();
+            
+            // Restore energy based on break duration
+            let restoredEnergy;
+            if (breakDuration === 300) { // 5 minutes
+                restoredEnergy = 3;
+            } else if (breakDuration === 900) { // 15 minutes
+                restoredEnergy = 8;
+            } else { // 30 minutes
+                currentEnergy = MAX_ENERGY;
+                updateEnergyDisplay();
+                showToast('Fully recharged! 🔋');
+                return;
+            }
+            
+            restoreEnergy(restoredEnergy);
+            showToast(`+${restoredEnergy} energy restored! 🌟`);
+        }
+        
+        function cancelBreak() {
+            isOnBreak = false;
+            if (breakTimer) {
+                clearInterval(breakTimer);
+                breakTimer = null;
+            }
+            
+            breakStartTime = null;
+            breakDuration = null;
+            
+            document.getElementById('break-timer').classList.add('hidden');
+            
+            // Resume regeneration after break
+            regenerationManager.resume();
+        }
+        
+        function saveEnergyState() {
+            const energyState = {
+                currentEnergy,
+                lastUpdated: Date.now()
+            };
+            localStorage.setItem('energyState', JSON.stringify(energyState));
+        }
+        
+        function loadEnergyState() {
+            try {
+                const saved = localStorage.getItem('energyState');
+                if (saved) {
+                    const state = JSON.parse(saved);
+                    // Check if it's a new day
+                    const lastUpdate = new Date(state.lastUpdated);
+                    const today = new Date();
+                    if (lastUpdate.toDateString() !== today.toDateString()) {
+                        // New day, reset energy
+                        currentEnergy = MAX_ENERGY;
+                    } else {
+                        currentEnergy = state.currentEnergy;
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading energy state:', error);
+            }
+            updateEnergyDisplay();
         }
 
         function showConfetti() {
@@ -2116,6 +2633,7 @@
             const frictionValue = parseInt(friction);
             
             const xpValues = {
+                '5m': Math.round(100 * Math.pow(1 + 5 / 60, 0.5) * frictionValue),
                 '15m': Math.round(100 * Math.pow(1 + 15 / 60, 0.5) * frictionValue),
                 '30m': Math.round(100 * Math.pow(1 + 30 / 60, 0.5) * frictionValue),
                 '1h': Math.round(100 * Math.pow(1 + 60 / 60, 0.5) * frictionValue),
@@ -2471,6 +2989,10 @@
             // Initialize UI elements
             updateNorthStarSection();
             updateWorkingZone();
+            
+            // Initialize Energy System
+            loadEnergyState();
+            regenerationManager.init();
             
             initWebSocket();
             loadTodos();
