@@ -46,7 +46,7 @@
 
 1. **Clone the repository**
 ```bash
-git clone https://github.com/yourusername/confetti-todo.git
+git clone https://github.com/thisisambros/confetti-todo.git
 cd confetti-todo
 ```
 
