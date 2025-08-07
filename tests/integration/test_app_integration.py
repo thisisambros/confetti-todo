@@ -94,7 +94,7 @@ def test_sort_tasks(test_page: Page):
 def test_ideas_section(test_page: Page):
     """Test ideas section is visible"""
     # Ideas section should be visible
-    expect(test_page.locator("#ideas-section")).to_be_visible()
+    expect(test_page.locator("#ideas")).to_be_visible()
     
     # Test idea shortcut
     test_page.press("body", "i")

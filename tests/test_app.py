@@ -58,7 +58,7 @@ def test_working_zone_empty_state(test_page: Page):
 def test_ideas_section_visible(test_page: Page):
     """Test that ideas section is visible"""
     # Ideas section should be visible
-    expect(test_page.locator("#ideas-section")).to_be_visible()
+    expect(test_page.locator("#ideas")).to_be_visible()
 
 def test_filters_work(test_page: Page):
     """Test that task filters work"""

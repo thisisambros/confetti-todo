@@ -1326,6 +1326,22 @@ h1 {
     gap: var(--space-2);
 }
 
+.task-metadata {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-left: auto;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+}
+
+.task-metadata > span:not(:last-child)::after {
+    content: '•';
+    margin-left: var(--space-2);
+    color: var(--color-text-muted);
+    opacity: 0.5;
+}
+
 .task-count-info {
     font-size: var(--font-size-sm);
     color: var(--color-muted);
@@ -1772,6 +1788,73 @@ h1 {
     background: var(--color-bg-secondary);
 }
 
+/* Subtasks Container Styling */
+.subtasks-container {
+    margin-top: var(--space-2);
+    margin-left: 20px; /* Align with checkbox */
+}
+
+.subtasks-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    cursor: pointer;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+    padding: var(--space-1) 0;
+    user-select: none;
+}
+
+.subtasks-toggle:hover {
+    color: var(--color-text);
+}
+
+.subtasks-toggle .toggle-icon {
+    font-size: 10px;
+    transition: transform 0.2s ease;
+}
+
+.subtasks-toggle.expanded .toggle-icon {
+    transform: rotate(90deg);
+}
+
+.subtasks-list {
+    margin-top: var(--space-2);
+    padding-left: var(--space-3);
+    border-left: 2px solid var(--color-border);
+    display: none;
+}
+
+.subtasks-list.expanded {
+    display: block;
+}
+
+.subtask-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2) 0;
+    font-size: var(--font-size-sm);
+}
+
+.subtask-item.completed {
+    opacity: 0.6;
+}
+
+.subtask-item.completed .subtask-title {
+    text-decoration: line-through;
+}
+
+.subtask-checkbox {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
+
+.subtask-title {
+    flex: 1;
+}
+
 /* Stacked Checkbox Progress System */
 .task-progress-checkboxes {
     display: inline-flex;
@@ -2065,6 +2148,20 @@ kbd {
     background: var(--color-success);
 }
 
+.modal {
+    display: none;
+}
+
+.modal:not(.hidden) {
+    display: block;
+}
+
+/* Ensure modal overlays are hidden when modal is hidden */
+.modal.hidden .modal-overlay,
+.modal.hidden .modal-content {
+    display: none !important;
+}
+
 .modal-overlay {
     position: fixed;
     top: 0;
@@ -2074,6 +2171,123 @@ kbd {
     background: rgba(0,0,0,0.3);
     z-index: 999;
     animation: overlayFadeIn 0.2s ease-out;
+}
+
+.modal-content {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: var(--color-bg);
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-none);
+    padding: var(--space-6);
+    min-width: 400px;
+    max-width: 600px;
+    max-height: 80vh;
+    overflow-y: auto;
+    z-index: 1000;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    animation: modalSlideIn 0.2s ease-out;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-4);
+    padding-bottom: var(--space-3);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.modal-header h2 {
+    margin: 0;
+    font-size: var(--font-size-lg);
+    font-weight: bold;
+}
+
+.close-modal {
+    background: none;
+    border: none;
+    font-size: var(--font-size-lg);
+    cursor: pointer;
+    padding: var(--space-1);
+    opacity: 0.5;
+    transition: opacity 0.2s ease;
+    color: var(--color-text);
+}
+
+.close-modal:hover {
+    opacity: 1;
+}
+
+.form-field {
+    margin-bottom: var(--space-4);
+}
+
+.form-field label {
+    display: block;
+    margin-bottom: var(--space-2);
+    font-weight: bold;
+    color: var(--color-text);
+}
+
+.form-field input,
+.form-field select,
+.form-field textarea {
+    width: 100%;
+    padding: var(--space-3);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-none);
+    font-family: var(--font-mono);
+    font-size: var(--font-size-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+}
+
+.form-field input:focus,
+.form-field select:focus,
+.form-field textarea:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 2px rgba(0, 67, 255, 0.2);
+}
+
+.form-actions {
+    display: flex;
+    gap: var(--space-3);
+    justify-content: flex-end;
+    margin-top: var(--space-6);
+}
+
+.btn {
+    padding: var(--space-3) var(--space-6);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-none);
+    font-family: var(--font-mono);
+    font-size: var(--font-size-sm);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-primary {
+    background: var(--color-primary);
+    color: white;
+    border-color: var(--color-primary);
+}
+
+.btn-primary:hover {
+    background: var(--color-primary-dark);
+    border-color: var(--color-primary-dark);
+}
+
+.btn-secondary {
+    background: var(--color-bg);
+    color: var(--color-text);
+}
+
+.btn-secondary:hover {
+    background: var(--color-bg-secondary);
 }
 
 @keyframes overlayFadeIn {
