@@ -117,21 +117,6 @@
         <!-- Right Widget -->
         <div class="right-widget">
             <div class="widget-section">
-                <div class="widget-title">Level & Progress</div>
-                <div class="level-info">
-                    Level <span id="current-level">1</span>
-                </div>
-                <div class="xp-progress-container">
-                    <div class="xp-bar">
-                        <div class="xp-progress">
-                            <div class="xp-fill" id="xp-fill"></div>
-                        </div>
-                        <span id="xp-text">0/500 XP</span>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="widget-section">
                 <div class="widget-title">Today's Stats</div>
                 <div class="today-stats">
                     <div class="stat-item">
@@ -1111,21 +1096,40 @@
                 const tasksToShow = (searchTerm || showAllTasks) ? tasksToDisplay : tasksToDisplay.slice(0, 5);
                 const hasMore = !searchTerm && tasksToDisplay.length > 5;
                 
-                tasksToShow.forEach((task, index) => {
-                    const element = createTaskElement(task);
-                    if (index < 5 && !showAllTasks && !searchTerm) {
+                // Recursive function to render tasks and their children
+                function renderTaskWithChildren(task, depth = 0, index = null) {
+                    // Set depth on task if not already set
+                    if (task.depth === undefined) {
+                        task.depth = depth;
+                    }
+                    
+                    const element = createTaskElement(task, depth > 0);
+                    if (index !== null && index < 5 && !showAllTasks && !searchTerm && depth === 0) {
                         element.classList.add('top-5');
                     }
+                    
+                    // Make nested tasks visible if parent is expanded or in search mode
+                    if (depth > 0 && (expandedTasks.has(task.parent_id) || searchTerm)) {
+                        element.classList.add('visible');
+                    }
+                    
                     container.appendChild(element);
                     
-                    // Add subtasks if parent is expanded or in search mode
+                    // Recursively render children if parent is expanded or in search mode
                     if ((expandedTasks.has(task.id) || searchTerm) && task.subtasks && task.subtasks.length > 0) {
                         task.subtasks.forEach(subtask => {
-                            const subtaskElement = createTaskElement(subtask, true);
-                            subtaskElement.classList.add('visible');
-                            container.appendChild(subtaskElement);
+                            // Ensure parent_id is set
+                            if (!subtask.parent_id) {
+                                subtask.parent_id = task.id;
+                            }
+                            renderTaskWithChildren(subtask, depth + 1);
                         });
                     }
+                }
+                
+                // Render all top-level tasks
+                tasksToShow.forEach((task, index) => {
+                    renderTaskWithChildren(task, 0, index);
                 });
                 
                 // Update display info and show more button
@@ -1149,13 +1153,21 @@
 
         function createTaskElement(task, isSubtask = false) {
             const isMobile = window.innerWidth <= 768;
+            const depth = task.depth || (isSubtask ? 1 : 0); // Use depth from task or fallback to isSubtask
             
             const li = document.createElement('li');
+            // Support both new depth-based and legacy subtask classes
             li.className = `task-item ${isSubtask ? 'subtask' : ''} ${task.is_completed ? 'completed' : ''}`;
             li.dataset.taskId = task.id;
+            li.dataset.depth = depth;
             
-            // Enable drag & drop for non-subtasks on desktop
-            if (!isMobile && !isSubtask && !task.is_completed) {
+            // For deep nesting beyond 10 levels, add custom CSS variable
+            if (depth > 10) {
+                li.style.setProperty('--depth', depth);
+            }
+            
+            // Enable drag & drop for top-level tasks on desktop
+            if (!isMobile && depth === 0 && !task.is_completed) {
                 li.draggable = true;
                 li.addEventListener('dragstart', handleDragStart);
                 li.addEventListener('dragend', handleDragEnd);
@@ -1188,8 +1200,8 @@
             const title = document.createElement('div');
             title.className = 'task-title';
             
-            // Add subtask toggle if has subtasks (before title text)
-            if (task.subtasks && task.subtasks.length > 0 && !isSubtask) {
+            // Add subtask toggle if has subtasks (any task can have children)
+            if (task.subtasks && task.subtasks.length > 0) {
                 const isExpanded = expandedTasks.has(task.id);
                 if (isExpanded) {
                     li.classList.add('subtasks-expanded');
@@ -1350,8 +1362,8 @@
             
             content.appendChild(xp);
             
-            // Add action buttons for non-completed tasks
-            if (!task.is_completed && !isSubtask) {
+            // Add action buttons for all non-completed tasks (any depth)
+            if (!task.is_completed) {
                 const actions = document.createElement('div');
                 actions.className = 'task-actions';
                 
@@ -1400,8 +1412,8 @@
             li.appendChild(checkbox);
             li.appendChild(content);
             
-            // Add quick action buttons for mobile
-            if (isMobile && !task.is_completed && !isSubtask) {
+            // Add quick action buttons for mobile (all tasks)
+            if (isMobile && !task.is_completed) {
                 const quickActions = document.createElement('div');
                 quickActions.className = 'task-quick-actions';
                 
@@ -1501,14 +1513,6 @@
         }
 
         function updateStats(stats) {
-            // Update level
-            document.getElementById('current-level').textContent = stats.level;
-            
-            // Update XP bar
-            const xpPercent = (stats.xp_progress / stats.xp_for_next_level) * 100;
-            document.getElementById('xp-fill').style.width = `${xpPercent}%`;
-            document.getElementById('xp-text').textContent = `${stats.xp_progress}/${stats.xp_for_next_level} XP`;
-            
             // Update today stats
             document.getElementById('tasks-today').textContent = stats.completed_today;
             document.getElementById('xp-today').textContent = stats.xp_today;

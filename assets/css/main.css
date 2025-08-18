@@ -1,6 +1,7 @@
 :root {
     /* Colors */
     --color-primary: #0043ff;
+    --color-primary-rgb: 0, 67, 255;
     --color-primary-dark: #0033cc;
     --color-success: #22c55e;
     --color-danger: #dc2626;
@@ -576,38 +577,6 @@ h1 {
     text-transform: uppercase;
     letter-spacing: 0.05em;
     color: var(--color-muted);
-}
-
-.level-info {
-    font-size: var(--font-size-md);
-    font-weight: bold;
-}
-
-.xp-progress-container {
-    width: 100%;
-}
-
-.xp-bar {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
-    font-size: var(--font-size-sm);
-}
-
-.xp-progress {
-    flex: 1;
-    height: 20px;
-    background: white;
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-none);
-    position: relative;
-    overflow: hidden;
-}
-
-.xp-fill {
-    height: 100%;
-    background: var(--color-primary);
-    transition: width 0.6s ease;
 }
 
 .today-stats {
@@ -1483,12 +1452,67 @@ h1 {
     background: var(--color-bg-secondary);
 }
 
+/* Depth-based indentation for nested tasks - Progressive indentation */
+.task-item[data-depth="1"] {
+    margin-left: 40px; /* First level indentation */
+    border-left: 3px solid var(--color-primary);
+}
+.task-item[data-depth="2"] {
+    margin-left: 90px; /* 50px more than level 1 */
+    border-left: 3px solid rgba(0, 67, 255, 0.7);
+}
+.task-item[data-depth="3"] {
+    margin-left: 150px; /* 60px more than level 2 */
+    border-left: 3px solid rgba(0, 67, 255, 0.5);
+}
+.task-item[data-depth="4"] {
+    margin-left: 220px; /* 70px more than level 3 */
+    border-left: 3px solid rgba(0, 67, 255, 0.35);
+}
+.task-item[data-depth="5"] {
+    margin-left: 300px; /* 80px more than level 4 */
+    border-left: 3px solid rgba(0, 67, 255, 0.25);
+}
+.task-item[data-depth="6"] {
+    margin-left: 390px; /* 90px more than level 5 */
+    border-left: 3px solid rgba(0, 67, 255, 0.2);
+}
+.task-item[data-depth="7"] {
+    margin-left: 490px; /* 100px more than level 6 */
+    border-left: 3px solid rgba(0, 67, 255, 0.15);
+}
+.task-item[data-depth="8"] {
+    margin-left: 600px; /* 110px more than level 7 */
+    border-left: 3px solid rgba(0, 67, 255, 0.12);
+}
+.task-item[data-depth="9"] {
+    margin-left: 720px; /* 120px more than level 8 */
+    border-left: 3px solid rgba(0, 67, 255, 0.1);
+}
+.task-item[data-depth="10"] {
+    margin-left: 850px; /* 130px more than level 9 */
+    border-left: 3px solid rgba(0, 67, 255, 0.08);
+}
+/* Tasks deeper than 10 levels - use CSS custom property for dynamic calculation */
+.task-item[data-depth]:not([data-depth="0"]):not([data-depth="1"]):not([data-depth="2"]):not([data-depth="3"]):not([data-depth="4"]):not([data-depth="5"]):not([data-depth="6"]):not([data-depth="7"]):not([data-depth="8"]):not([data-depth="9"]):not([data-depth="10"]) {
+    margin-left: calc(400px + ((var(--depth, 10) - 10) * 40px));
+    border-left: 3px solid rgba(0, 67, 255, 0.05);
+}
+
+/* Hide nested tasks by default */
+.task-item[data-depth]:not([data-depth="0"]) {
+    display: none;
+}
+.task-item[data-depth].visible {
+    display: flex;
+}
+
+/* Legacy subtask support for backward compatibility */
 .task-item.subtask {
-    margin-left: 36px; /* Align with parent task content (20px checkbox + 16px gap) */
+    /* margin-left handled by data-depth rules */
     border-left: 3px solid var(--color-primary);
     display: none;
 }
-
 .task-item.subtask.visible {
     display: flex;
 }

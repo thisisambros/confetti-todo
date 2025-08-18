@@ -46,6 +46,9 @@ class Task(BaseModel):
     completed_at: Optional[str] = None
     subtasks: List['Task'] = []
     parent_id: Optional[str] = None
+    depth: int = 0
+    time_spent: int = 0  # Direct time in minutes
+    total_time_spent: int = 0  # Including all descendants
     
 Task.model_rebuild()
 
@@ -183,7 +186,7 @@ def calculate_energy_cost(task_metadata: Dict) -> int:
     
     return energy_cost
 
-def parse_markdown_line(line: str, line_num: int, parent_id: Optional[str] = None) -> Optional[Dict]:
+def parse_markdown_line(line: str, line_num: int, parent_id: Optional[str] = None, depth: int = 0) -> Optional[Dict]:
     """Parse a single markdown line into a task object"""
     indent_level = (len(line) - len(line.lstrip())) // 2
     line = line.strip()
@@ -231,6 +234,9 @@ def parse_markdown_line(line: str, line_num: int, parent_id: Optional[str] = Non
         "completed_at": completed_at,
         "indent_level": indent_level,
         "parent_id": parent_id,
+        "depth": depth,
+        "time_spent": 0,
+        "total_time_spent": 0,
         "subtasks": []
     }
 
@@ -252,23 +258,37 @@ def parse_markdown() -> Dict[str, List[Task]]:
             continue
             
         if current_section and line.strip().startswith("- ["):
-            task_data = parse_markdown_line(line, line_num)
+            # Calculate depth based on indentation level
+            indent_level = (len(line) - len(line.lstrip())) // 2
+            depth = indent_level
+            
+            # Find parent task based on indent level
+            while len(task_stack) > indent_level:
+                task_stack.pop()
+            
+            parent_id = task_stack[-1]["id"] if task_stack else None
+            
+            task_data = parse_markdown_line(line, line_num, parent_id, depth)
             if task_data:
-                indent_level = task_data.pop("indent_level")
-                
-                # Find parent based on indent level
-                while len(task_stack) > indent_level:
-                    task_stack.pop()
+                actual_indent = task_data.pop("indent_level")
                 
                 if indent_level > 0 and task_stack:
                     parent = task_stack[-1]
                     task_data["parent_id"] = parent["id"]
                     parent["subtasks"].append(task_data)
+                    # Inherit category from parent if not specified
+                    if not task_data["category"] and parent.get("category"):
+                        task_data["category"] = parent["category"]
                 else:
                     sections[current_section].append(task_data)
                 
                 if indent_level == len(task_stack):
                     task_stack.append(task_data)
+    
+    # Calculate total time spent for all tasks
+    for section_tasks in sections.values():
+        for task in section_tasks:
+            calculate_total_time(task)
     
     return sections
 
@@ -306,8 +326,21 @@ def task_to_markdown(task: Dict, indent: int = 0) -> str:
     
     return "\n".join(lines)
 
+def calculate_total_time(task: Dict) -> int:
+    """Calculate total time spent including all descendants"""
+    total = task.get("time_spent", 0)
+    for subtask in task.get("subtasks", []):
+        total += calculate_total_time(subtask)
+    task["total_time_spent"] = total
+    return total
+
 def save_markdown(sections: Dict[str, List[Dict]]):
     """Save the structured data back to markdown"""
+    # Calculate total time for all tasks before saving
+    for section_tasks in sections.values():
+        for task in section_tasks:
+            calculate_total_time(task)
+    
     # Create backup
     if TODO_FILE.exists():
         BACKUP_DIR.mkdir(exist_ok=True)
@@ -364,9 +397,6 @@ async def get_stats():
         "completed_today": 0,
         "xp_today": 0,
         "total_xp": 0,
-        "level": 1,
-        "xp_for_next_level": 500,
-        "xp_progress": 0,
         "streak": 0
     }
     
@@ -412,11 +442,6 @@ async def get_stats():
         stats["completed_today"] += count
         stats["xp_today"] += xp_today
         stats["total_xp"] += total_xp
-    
-    # Calculate level (each level requires 500 XP)
-    stats["level"] = 1 + (stats["total_xp"] // 500)
-    stats["xp_progress"] = stats["total_xp"] % 500
-    stats["xp_for_next_level"] = 500
     
     return stats
 
